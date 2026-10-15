@@ -211,11 +211,43 @@ def main():
     changed_files = run(["git", "diff", "--name-only", f"{diff_base}...HEAD"], cwd=clone_dir).stdout.strip().splitlines()
     head_sha = run(["git", "rev-parse", "HEAD"], cwd=clone_dir).stdout.strip()
 
-    # 3. Attempt push of BOTH `fz-contrib` and `fz/track-*` to remote origin, and open PR targeting `fz-contrib` (NEVER `main`!)
-    push_remote = os.environ.get("SIMON_PR_REMOTE", "origin")
-    run(["git", "push", push_remote, f"{BASE_BRANCH}:refs/heads/{BASE_BRANCH}"], cwd=clone_dir, check=False)
-    push_res = run(["git", "push", "-u", push_remote, f"HEAD:refs/heads/{meta['branch']}"], cwd=clone_dir, check=False)
-    remote_pushed = push_res.returncode == 0
+    # 3. Attempt push of BOTH `fz-contrib` and `fz/track-*` to remote fork or origin, and open PR targeting `fz-contrib` (NEVER `main`!)
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    push_remote = os.environ.get("SIMON_PR_REMOTE", "fork")
+    fork_url = "https://github.com/filipzarzynski/SIMON.git"
+    upstream_url = "https://github.com/Szpili/SIMON.git"
+
+    # Configure remotes in clone_dir if missing
+    run(["git", "remote", "add", "fork", fork_url], cwd=clone_dir, check=False)
+    run(["git", "remote", "add", "upstream", upstream_url], cwd=clone_dir, check=False)
+
+    remote_pushed = False
+    push_dest = push_remote
+
+    # If token is provided, construct authenticated remote url
+    if token:
+        auth_fork_url = f"https://x-access-token:{token}@github.com/filipzarzynski/SIMON.git"
+        push_fzc = run(["git", "push", auth_fork_url, f"{BASE_BRANCH}:refs/heads/{BASE_BRANCH}"], cwd=clone_dir, check=False)
+        push_tr = run(["git", "push", "-f", auth_fork_url, f"HEAD:refs/heads/{meta['branch']}"], cwd=clone_dir, check=False)
+        if push_fzc.returncode == 0 and push_tr.returncode == 0:
+            remote_pushed = True
+            push_dest = "fork (authenticated via GITHUB_TOKEN)"
+
+    if not remote_pushed:
+        # Try pushing to configured remotes (fork, then push_remote)
+        for rem in [push_remote, "fork", "origin"]:
+            p1 = run(["git", "push", rem, f"{BASE_BRANCH}:refs/heads/{BASE_BRANCH}"], cwd=clone_dir, check=False)
+            p2 = run(["git", "push", "-u", rem, f"HEAD:refs/heads/{meta['branch']}"], cwd=clone_dir, check=False)
+            if p1.returncode == 0 and p2.returncode == 0:
+                remote_pushed = True
+                push_dest = rem
+                break
+
+    # Also keep /home/agent/SIMON synchronized with local fz-contrib & track branch
+    local_simon = handover_root.parent / "SIMON"
+    if (local_simon / ".git").exists():
+        run(["git", "-C", str(local_simon), "fetch", str(clone_dir), f"{BASE_BRANCH}:{BASE_BRANCH}"], check=False)
+        run(["git", "-C", str(local_simon), "fetch", str(clone_dir), f"HEAD:refs/heads/{meta['branch']}"], check=False)
 
     pr_title = args.title or meta["title"]
     cherry_pick_table = (
@@ -245,7 +277,7 @@ Every commit on this branch is self-contained, compiles cleanly, and passes test
 
     pr_url = None
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
-    repo_slug = os.environ.get("SIMON_GITHUB_REPO", "Szpili/SIMON")
+    repo_slug = os.environ.get("SIMON_GITHUB_REPO", "filipzarzynski/SIMON")
     if remote_pushed and token:
         try:
             req = urllib.request.Request(

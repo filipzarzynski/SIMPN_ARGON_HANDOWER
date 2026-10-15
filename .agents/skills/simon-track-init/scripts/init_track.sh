@@ -10,6 +10,7 @@ TRACK_RAW="$(echo "$1" | tr '[:lower:]' '[:upper:]')"
 TRACK="${TRACK_RAW#TRACK_}"
 TRACK="${TRACK#TRACK}"
 UPSTREAM_URL="${2:-https://github.com/Szpili/SIMON.git}"
+FORK_URL="${3:-https://github.com/filipzarzynski/SIMON.git}"
 BASE_BRANCH="fz-contrib"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -105,8 +106,9 @@ mkdir -p "$WORKSPACES_DIR"
             git clone --bare "$UPSTREAM_URL" "$HUB_REPO"
         fi
     else
-        git -C "$HUB_REPO" fetch origin "+refs/heads/main:refs/heads/main" 2>/dev/null || true
-        git -C "$HUB_REPO" fetch origin "+refs/heads/$BASE_BRANCH:refs/heads/$BASE_BRANCH" 2>/dev/null || true
+        git -C "$HUB_REPO" remote set-url upstream "$UPSTREAM_URL" 2>/dev/null || git -C "$HUB_REPO" remote add upstream "$UPSTREAM_URL" 2>/dev/null || true
+        git -C "$HUB_REPO" remote set-url origin "$FORK_URL" 2>/dev/null || git -C "$HUB_REPO" remote add origin "$FORK_URL" 2>/dev/null || true
+        git -C "$HUB_REPO" fetch upstream "+refs/heads/main:refs/heads/upstream_main" 2>/dev/null || true
     fi
 
     # Ensure fz-contrib branch exists in the hub (initialized from main if not yet created)
@@ -135,6 +137,21 @@ fi
 git -C "$CLONE_DIR" config user.name "FZ (Track $TRACK)"
 git -C "$CLONE_DIR" config user.email "fz-track-${TRACK,,}@simon-argon.local"
 
+# origin points to user's fork (filipzarzynski/SIMON) for pushes and PRs
+if git -C "$CLONE_DIR" remote get-url origin >/dev/null 2>&1; then
+    git -C "$CLONE_DIR" remote set-url origin "$FORK_URL"
+else
+    git -C "$CLONE_DIR" remote add origin "$FORK_URL"
+fi
+
+# upstream points to original canonical repository (Szpili/SIMON) for tracking main
+if git -C "$CLONE_DIR" remote get-url upstream >/dev/null 2>&1; then
+    git -C "$CLONE_DIR" remote set-url upstream "$UPSTREAM_URL"
+else
+    git -C "$CLONE_DIR" remote add upstream "$UPSTREAM_URL"
+fi
+
+# hub points to shared local bare repository for instant inter-agent coordination
 if git -C "$CLONE_DIR" remote get-url hub >/dev/null 2>&1; then
     git -C "$CLONE_DIR" remote set-url hub "$HUB_REPO"
 else
@@ -142,6 +159,7 @@ else
 fi
 
 git -C "$CLONE_DIR" fetch hub
+git -C "$CLONE_DIR" fetch upstream main 2>/dev/null || true
 
 # Ensure local fz-contrib tracking ref exists
 git -C "$CLONE_DIR" branch -f "$BASE_BRANCH" "hub/$BASE_BRANCH"
