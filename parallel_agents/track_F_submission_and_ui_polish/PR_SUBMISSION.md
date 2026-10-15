@@ -1,13 +1,13 @@
 # Pull Request Submission Report — Track F (PR-6, Stage 1)
 
-- **Generated At**: `2026-10-15T20:26:22Z`
+- **Generated At**: `2026-10-15T21:11:59Z`
 - **Track**: Track F (`PR-6`)
 - **Track Branch**: `fz/track-F-submission-and-ui-polish`
 - **Target PR Base Branch**: `fz-contrib` (**NEVER** directly to `main`)
-- **HEAD Commit**: `86ad810c6ac2dcd77ab21fd39cb7e37c33d6bc98`
+- **HEAD Commit**: `e36ecbb3cd5217ebf6201adae480f46d7013804d`
 - **Integrated into Local Hub `fz-contrib`**: `YES (Linear / Cherry-Pickable)`
 - **Portable Git Bundle**: `/home/agent/SIMPN_ARGON_HANDOWER/parallel_agents/track_F_submission_and_ui_polish/PR-6_F.bundle`
-- **Remote Push (`fork`)**: `LOCAL_HUB_AND_BUNDLE_READY (set GITHUB_TOKEN/credentials to push upstream)`
+- **Remote Push (`fork`)**: `PUSHED`
 - **GitHub PR URL (into `fz-contrib`)**: `Ready to open from fz/track-F-submission-and-ui-polish -> fz-contrib`
 
 ---
@@ -25,9 +25,9 @@ Every commit on this branch is self-contained, compiles cleanly, and passes test
 
 | # | Commit | Description | Files Touched | Captain Cherry-Pick Command |
 | :--- | :--- | :--- | :--- | :--- |
-| `1` | `e6ac259` | [FZ-F1] feat(ui): add Ed25519 signature tamper button to /demo and simulation badge to /network | `ui/src/lib/components/NodePanel.svelte, ui/src/routes/demo/+page.svelte, ui/src/routes/network/+page.svelte` | `git cherry-pick e6ac259c1a89a4719c5afd9e13790e5cd16bcd80` |
-| `2` | `a198e9f` | [FZ-F2] fix(tools): make simon_api.py proof_level M1-aware and add optional SIMON_API_KEY auth | `demo/app.en.py, demo/app.py, tools/simon-api/simon_api.py, tools/simon-verifier/verifier_loop.py` | `git cherry-pick a198e9f3b222d5dd4d7f1d89c5bc058ace50a763` |
-| `3` | `86ad810` | [FZ-F3] docs(submission): align crate/test counts and MI300X metrics across README and LABLAB-SUBMISSION | `README.md, docs/zgloszenie/LABLAB-SUBMISSION.md` | `git cherry-pick 86ad810c6ac2dcd77ab21fd39cb7e37c33d6bc98` |
+| `1` | `360fd58` | [FZ-F1] feat(ui): add Ed25519 signature tamper button to /demo and simulation badge to /network | `ui/src/lib/components/NodePanel.svelte, ui/src/routes/demo/+page.svelte, ui/src/routes/network/+page.svelte` | `git cherry-pick 360fd58ccee8a0c340d7fb458c10217c8185a454` |
+| `2` | `a7f3c06` | [FZ-F2] fix(tools): make simon_api.py proof_level M1-aware and add optional SIMON_API_KEY auth | `demo/app.en.py, demo/app.py, tools/simon-api/simon_api.py, tools/simon-verifier/verifier_loop.py` | `git cherry-pick a7f3c0641aeb0dc26580f65232ac17219a056bf6` |
+| `3` | `e36ecbb` | [FZ-F3] docs(submission): align crate/test counts and MI300X metrics across README and LABLAB-SUBMISSION | `README.md, docs/zgloszenie/LABLAB-SUBMISSION.md` | `git cherry-pick e36ecbb3cd5217ebf6201adae480f46d7013804d` |
 
 ### Diffstat
 ```text
