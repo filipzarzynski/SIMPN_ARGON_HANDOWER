@@ -129,14 +129,13 @@ def main():
         print(f"ERROR: Clone directory {clone_dir} not found.", file=sys.stderr)
         sys.exit(1)
 
-    diff_base = "origin/main" if meta["stage"] == 1 else f"hub/{BASE_BRANCH}"
+    diff_base = "hub/main" if meta["stage"] == 1 else f"hub/{BASE_BRANCH}"
 
     # 1. Acquire lock on shared integration hub, push track branch, check conflicts, and advance fz-contrib
     cross_track_results = []
     lock_file.parent.mkdir(parents=True, exist_ok=True)
     with open(lock_file, "w") as lf:
         fcntl.flock(lf, fcntl.LOCK_EX)
-        run(["git", "fetch", "origin", "main"], cwd=clone_dir, check=False)
         run(["git", "fetch", "hub"], cwd=clone_dir)
 
         # Ensure track branch is cleanly rebased onto its stage base

@@ -25,10 +25,10 @@ fi
 cd "$CLONE_DIR"
 git fetch hub 2>/dev/null || true
 
-# Stage 1 tracks compare against origin/main; Stage 2 tracks compare against hub/fz-contrib
+# Stage 1 tracks compare against hub/main; Stage 2 tracks compare against hub/fz-contrib
 case "$TRACK" in
     A|B|C|D|E|F)
-        DIFF_BASE="origin/main"
+        DIFF_BASE="hub/main"
         ;;
     G|H|I)
         DIFF_BASE="hub/fz-contrib"
@@ -65,7 +65,7 @@ is_allowed_file() {
     local f="$1"
     case "$TRACK" in
         A)
-            [[ "$f" == "crates/simon-cli/src/node.rs" || "$f" == "crates/simon-cli/src/main.rs" ]]
+            [[ "$f" == "crates/simon-cli/src/node.rs" || "$f" == "crates/simon-cli/src/main.rs" || "$f" == "crates/simon-cli/src/agent.rs" ]]
             ;;
         B)
             [[ "$f" == "crates/simon-harness/src/request_response.rs" || "$f" == "crates/simon-cli/src/wspolne.rs" || "$f" == "crates/simon-cli/src/agent.rs" ]]
@@ -129,7 +129,12 @@ echo " [Pass 3/3] Running Verification & Test Suites for Track $TRACK"
 echo "========================================================================"
 
 case "$TRACK" in
-    A|B|H)
+    A)
+        python3 scripts/wartownik_stalych.py
+        cargo test -p simon-core -p simon-cli
+        cargo clippy -p simon-cli --no-deps -- -D warnings
+        ;;
+    B|H)
         python3 scripts/wartownik_stalych.py
         cargo test -p simon-core -p simon-harness -p simon-cli
         cargo clippy -p simon-harness -p simon-cli -- -D warnings

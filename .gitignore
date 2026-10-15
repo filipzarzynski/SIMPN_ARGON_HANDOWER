@@ -1,7 +1,7 @@
 # Dedicated per-agent upstream clones (each agent clones Szpili/SIMON here)
 workspaces/
 parallel_agents/*/repo/
-
+parallel_agents/*/repo
 
 # Build & runtime artifacts if commands are ever run from root
 target/
