@@ -1,49 +1,78 @@
-# Multi-Agent Orchestrator Guide (For Gemini 3.8 Flash High Coding Agents in Antigravity)
+# Parallel Agent Orchestration Guide (`SIMPN_ARGON_HANDOWER`)
 
-This directory (`/home/agent/SIMPN_ARGON_HANDOWER/parallel_agents/`) is structured specifically so an orchestrator agent or human developer can launch **up to 6 parallel Gemini 3.8 Flash High coding agents** in Antigravity without merge conflicts, context bloat, or hallucinated assumptions.
+This repository is pre-configured as the **shared main Antigravity workspace** for 6 parallel **Gemini 3.8 Flash High** coding agents (`Track A` through `Track F`).
 
----
+Because this repository includes:
+- Root [`AGENTS.md`](file:///home/agent/SIMPN_ARGON_HANDOWER/AGENTS.md) (automatically loaded by Antigravity for every agent spawned in this workspace)
+- 5 specialized workspace skills in `.agents/skills/`:
+  - [`simon-track-init`](file:///home/agent/SIMPN_ARGON_HANDOWER/.agents/skills/simon-track-init/SKILL.md) (`init_track.sh`)
+  - [`simon-crypto-and-protocol`](file:///home/agent/SIMPN_ARGON_HANDOWER/.agents/skills/simon-crypto-and-protocol/SKILL.md)
+  - [`simon-industry-and-ui`](file:///home/agent/SIMPN_ARGON_HANDOWER/.agents/skills/simon-industry-and-ui/SKILL.md)
+  - [`simon-verify-suite`](file:///home/agent/SIMPN_ARGON_HANDOWER/.agents/skills/simon-verify-suite/SKILL.md) (`verify_track.sh`)
+  - [`simon-pr-delivery`](file:///home/agent/SIMPN_ARGON_HANDOWER/.agents/skills/simon-pr-delivery/SKILL.md) (`prepare_and_create_pr.py`)
 
-## 1. How Work Is Partitioned for Zero-Conflict Parallelism
-
-Flash-tier coding agents perform best when:
-1. Every task has an **explicit list of owned files** (and an explicit list of **off-limits files**).
-2. Every bug/feature has **exact line numbers, current code snippets, and target replacement behavior**.
-3. Each parallel agent works in an **isolated `git worktree`** (or Antigravity `Workspace: "share"` / `"branch"` subagent mode) on its own feature branch.
-
-| Track Folder | Branch Name | Owned Files (Exclusive Write Scope) | Can Run in Parallel With |
-| :--- | :--- | :--- | :--- |
-| **`track_A_receipt_and_node_truth`** | `fix/node-receipt-truth` | `crates/simon-cli/src/node.rs`<br>`crates/simon-cli/src/main.rs` | Tracks C, D, E, F (Run Track B *after* Track A or merge A into B) |
-| **`track_B_live_m1_token_binding`** | `feat/live-m1-receipts` | `crates/simon-harness/src/request_response.rs`<br>`crates/simon-cli/src/node.rs`<br>`crates/simon-cli/src/agent.rs` | Tracks C, D, E, F (Depends on or subsumes Track A in `node.rs`) |
-| **`track_C_industry_gemma4_live_agent`** | `feat/industry-m7-agent` | `tools/simon-industry/*`<br>`ui/src/routes/industry/+page.svelte` | Tracks A, B, D, E |
-| **`track_D_core_security_and_wasm_fixes`** | `fix/core-security-hardening` | `crates/simon-core/src/*`<br>`crates/simon-core/tests/*`<br>`crates/simon-verify-wasm/src/lib.rs` | Tracks A, B, C, E, F (100% disjoint from CLI, Harness, Tools, and UI!) |
-| **`track_E_p2p_coordinator_bridge`** | `feat/coordinator-gossipsub-bridge` | `crates/simon-harness/src/acp_server.rs`<br>`crates/simon-harness/src/client_protocol.rs`<br>`crates/simon-node/src/lib.rs`<br>`crates/simon-cli/src/coord.rs` | Tracks A, B, C, D, F (100% disjoint!) |
-| **`track_F_submission_and_ui_polish`** | `fix/submission-and-ui-polish` | `docs/zgloszenie/LABLAB-SUBMISSION.md`<br>`ui/src/lib/components/VerifierPanel.svelte`<br>`ui/src/lib/components/NodePanel.svelte` | Tracks A, B, D, E |
+you can spawn all 6 agents concurrently in Antigravity with `/home/agent/SIMPN_ARGON_HANDOWER` as their workspace using a single short prompt per agent.
 
 ---
 
-## 2. How to Spawn Parallel Agents in Antigravity
+## 1. Ready-to-Paste Prompts for Antigravity Agents
 
-### Option A: Using Antigravity's `invoke_subagent` Tool (`Workspace: "share"` or `git worktree`)
-If you are an orchestrator agent inside Antigravity, you can spawn Wave 1 + Wave 2 agents concurrently in a single `invoke_subagent` tool call, or create git worktrees under `/home/agent/SIMPN_ARGON_HANDOWER/worktrees/`:
+Open 6 agent sessions in `/home/agent/SIMPN_ARGON_HANDOWER` and paste the corresponding prompt:
 
-```bash
-# Create isolated git worktrees so /home/agent/SIMON stays untouched on main!
-mkdir -p /home/agent/SIMPN_ARGON_HANDOWER/worktrees
-git -C /home/agent/SIMON worktree add -b fix/node-receipt-truth /home/agent/SIMPN_ARGON_HANDOWER/worktrees/track_A main
-git -C /home/agent/SIMON worktree add -b feat/industry-m7-agent /home/agent/SIMPN_ARGON_HANDOWER/worktrees/track_C main
-git -C /home/agent/SIMON worktree add -b fix/core-security-hardening /home/agent/SIMPN_ARGON_HANDOWER/worktrees/track_D main
-git -C /home/agent/SIMON worktree add -b feat/coordinator-gossipsub-bridge /home/agent/SIMPN_ARGON_HANDOWER/worktrees/track_E main
-git -C /home/agent/SIMON worktree add -b fix/submission-and-ui-polish /home/agent/SIMPN_ARGON_HANDOWER/worktrees/track_F main
-```
-
-### Option B: Copy-Paste Prompt Template for Any Individual Gemini 3.8 Flash Agent
-Give each agent this exact starter prompt (substituting `<TRACK_DIR>`):
-
+### Track A Agent (`PR-1: fix/node-receipt-truth`)
 ```text
-You are assigned to execute a scoped engineering track for the SIMON hackathon project.
-1. Read `/home/agent/SIMPN_ARGON_HANDOWER/parallel_agents/AGENT_RULES_COMMON.md` first.
-2. Read your exact task specification in `/home/agent/SIMPN_ARGON_HANDOWER/parallel_agents/<TRACK_DIR>/TASK_SPEC.md`.
-3. Work ONLY inside your assigned git worktree/branch and touch ONLY the files listed in your TASK_SPEC.md.
-4. Run all verification tests specified in your TASK_SPEC.md before committing your branch.
+you are track A agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
 ```
+
+### Track B Agent (`PR-2: feat/live-m1-receipts`)
+```text
+you are track B agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
+```
+
+### Track C Agent (`PR-3: feat/industry-m7-agent`)
+```text
+you are track C agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
+```
+
+### Track D Agent (`PR-4: fix/core-security-hardening`)
+```text
+you are track D agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
+```
+
+### Track E Agent (`PR-5: feat/coordinator-gossipsub-bridge`)
+```text
+you are track E agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
+```
+
+### Track F Agent (`PR-6: fix/submission-and-ui-polish`)
+```text
+you are track F agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
+```
+
+---
+
+## 2. How Isolation & Zero Merge Conflicts Are Enforced
+
+```mermaid
+flowchart TD
+    Root["/home/agent/SIMPN_ARGON_HANDOWER<br/>(Shared Antigravity Workspace + AGENTS.md + .agents/skills)"]
+    Hub["workspaces/_upstream_hub.git<br/>(Shared Bare Integration Repo for Cross-Track Merge Checks)"]
+    
+    Root --> WA["workspaces/track_A<br/>Branch: fix/node-receipt-truth<br/>Scope: crates/simon-cli/src/node.rs"]
+    Root --> WB["workspaces/track_B<br/>Branch: feat/live-m1-receipts<br/>Scope: crates/simon-cli/src/{agent,wspolne}.rs"]
+    Root --> WC["workspaces/track_C<br/>Branch: feat/industry-m7-agent<br/>Scope: tools/simon-industry/*, industry-run.json"]
+    Root --> WD["workspaces/track_D<br/>Branch: fix/core-security-hardening<br/>Scope: crates/simon-core/src/*, simon-verify-wasm"]
+    Root --> WE["workspaces/track_E<br/>Branch: feat/coordinator-gossipsub-bridge<br/>Scope: coord.rs, mapreduce.rs, simon-node"]
+    Root --> WF["workspaces/track_F<br/>Branch: fix/submission-and-ui-polish<br/>Scope: docs, demo/network UI, Python tools"]
+
+    WA --> Hub
+    WB --> Hub
+    WC --> Hub
+    WD --> Hub
+    WE --> Hub
+    WF --> Hub
+```
+
+1. **Subfolder Isolation**: Each agent clones `https://github.com/Szpili/SIMON.git` into `workspaces/track_<X>` (git-ignored by the parent `SIMPN_ARGON_HANDOWER` repo so agents never dirty the handover repository).
+2. **Automated Scope Gate (`verify_track.sh`)**: Before finishing, each agent runs `.agents/skills/simon-verify-suite/scripts/verify_track.sh <TRACK> --final`, which fails immediately if any file outside that Track's exclusive ownership was modified.
+3. **Cross-Track Merge Verification (`prepare_and_create_pr.py`)**: Each agent pushes its finished branch to `workspaces/_upstream_hub.git` under an exclusive `flock` and runs `git merge-tree --write-tree` against `origin/main` and against every other completed Track branch in the hub, writing the full PR report and portable `.bundle` to `parallel_agents/track_<X>_*/PR_SUBMISSION.md`.

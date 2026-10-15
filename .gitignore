@@ -1,0 +1,12 @@
+# Dedicated per-agent upstream clones (each agent clones Szpili/SIMON here)
+workspaces/
+parallel_agents/*/repo/
+track_*/
+
+# Build & runtime artifacts if commands are ever run from root
+target/
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+.env
