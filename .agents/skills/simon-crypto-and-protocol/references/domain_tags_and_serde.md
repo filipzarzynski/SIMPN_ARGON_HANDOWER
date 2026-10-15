@@ -1,32 +1,41 @@
-# SIMON Polish/English Serde Map & Binary Layouts
+# SIMON Rust Struct & Domain Tag Reference (`crates/simon-core`)
 
 ## 1. `Receipt` (`crates/simon-core/src/receipt.rs`)
 
-| Rust Identifier (Polish) | JSON Wire Name (`#[serde(rename)]`) | Type | Notes |
-| :--- | :--- | :--- | :--- |
-| `wersja` | `version` | `u32` | Always `1` (`WERSJA_RECEIPT`) |
-| `id_zlecenia` | `order_id_hex` | `Skrot32` | 64-char hex |
-| `wykonawca` | `executor_pubkey_hex` | `KluczPubliczny` | 64-char Ed25519 pubkey hex |
-| `skrot_wag` | `weights_hash_hex` | `Skrot32` | `SIMON-WEIGHTS-v1` hash of GGUF SHA-256 |
-| `skrot_konfiguracji` | `backend_config_hash_hex` | `Skrot32` | `SIMON-CONFIG-v1` hash |
-| `skrot_promptu` | `prompt_hash_hex` | `Skrot32` | `SIMON-PROMPT-v1` hash |
-| `skrot_wyjscia` | `output_hash_hex` | `Skrot32` | `SIMON-OUTPUT-v1` hash |
-| `liczba_tokenow_wejscia` | `prompt_tokens` | `u32` | Input token count |
-| `liczba_tokenow_wyjscia` | `completion_tokens` | `u32` | Output token count |
-| `czas_wykonania_us` | `timestamp_us` | `u64` | Unix timestamp in microseconds (`Track A` fixes hardcoded `0`) |
-| `zobowiazania_tokenow` | `token_commitments` | `Vec<TokenCommitment>` | M1 per-token commitments (`Track B` populates in live node) |
-| `skrot_zobowiazan_tokenow` | `token_commitments_root_hex` | `Option<Skrot32>` | M1 root (`SIMON-M1-ROOT-v1`) |
-| `zobowiazania_logprobow` | `logprob_commitments` | `Vec<ZobowiazanieLogproba>` | M3 logprob commitments |
-| `skrot_zobowiazan_logprobow` | `logprob_commitments_root_hex` | `Option<Skrot32>` | M3 root |
-| `skrot_ladunku` | `payload_hash_hex` | `Skrot32` | `SIMON-RECEIPT-v1` hash |
-| `podpis_wykonawcy` | `signature_hex` | `Option<Podpis>` | 128-char Ed25519 signature hex |
+| Field Name (Rust & JSON) | Type | Notes |
+| :--- | :--- | :--- |
+| `job_id` | `String` | Unique job identifier |
+| `node_id` | `String` | Executor node identifier (usually hex public key) |
+| `model_hash` | `String` | Model identifier / GGUF name |
+| `precision` | `Precision` | Enum: `Bf16` (`"bf16"`), `Fp16` (`"fp16"`), `Fp32` (`"fp32"`), `Fp8` (`"fp8"`), `Fp4` (`"fp4"`) |
+| `prompt_tokens` | `u32` | Input token count |
+| `completion_tokens` | `u32` | Output token count |
+| `started_at_us` | `u64` | Unix timestamp in microseconds when inference started (`Track A` fixes `started_at_us == finished_at_us`) |
+| `finished_at_us` | `u64` | Unix timestamp in microseconds when inference finished |
+| `activation_hash` | `String` | e.g. `"toploc:NIE_POLICZONY"` |
+| `output_digest` | `String` | 64-char hex SHA-256 from `odcisk_wyjscia(job_id, output)` (`"SIMON/OUTPUT/v1"`) |
+| `runtime` | `String` | e.g. `"vllm/0.27.1"`, `"ollama/0.5.1"`, `"llama.cpp/1"` (`Track A` adds `/props` detection) |
+| `wiazania` | `Option<WiazaniaM1>` | Proof Level 1 token-chain & sampling bindings (`skip_serializing_if = "Option::is_none"`) |
+| `signer` | `PublicKey` | 32-byte Ed25519 public key (serialized as 64-char hex) |
+| `signature` | `Option<Signature>` | 64-byte Ed25519 signature (serialized as 128-char hex) |
 
-## 2. `TokenCommitment` (`crates/simon-core/src/receipt.rs`)
+## 2. `WiazaniaM1` (`crates/simon-core/src/receipt.rs`)
 
-Binary preimage hashed with `DOMENA_M1_TOKEN` (`"SIMON-M1-TOKEN-v1"`):
-- `indeks.to_le_bytes()` (`u32`, 4 bytes LE)
-- `id_tokenu.to_le_bytes()` (`u32`, 4 bytes LE)
-- `(tekst.len() as u32).to_le_bytes()` (`u32`, 4 bytes LE)
-- `tekst.as_bytes()` (UTF-8 bytes)
-- `logprob_q16.to_le_bytes()` (`i32`, 4 bytes LE, where `q16 = (logprob_f32 * 65536.0).round() as i32`)
-- `skrot_kandydatow` (`32` bytes: `BLAKE3` of canonical sorted top-k candidate pairs, or `[0u8; 32]` if empty)
+| Field Name (Rust & JSON) | Type | Domain / Formula |
+| :--- | :--- | :--- |
+| `receipt_level` | `u8` | `1` (`RECEIPT_LEVEL_M1`) |
+| `schema_version` | `u8` | `1` (`SCHEMA_VERSION_M1`) |
+| `runtime` | `String` | Runtime descriptor |
+| `tokenizer_hash` | `String` | `odcisk_tokenizera(bytes)` (`"SIMON/TOKENIZER/v1"`) |
+| `prompt_digest` | `String` | `odcisk_promptu(tokenizer_hash, client_nonce, prompt_token_ids)` (`"SIMON/PROMPT/v1"`) |
+| `token_chain_digest` | `String` | `lancuch_tokenow(&prompt_digest, output_token_ids)` (`"SIMON/CHAIN/v1"` rolling SHA-256 chain) |
+| `params_digest` | `String` | `SamplingCommitment::odcisk()` (`"SIMON/SAMPLING/v1"`) |
+| `seed` | `u64` | Deterministic sampling seed |
+
+## 3. Key Functions in `crates/simon-core/src/receipt.rs`
+- `odcisk_wyjscia(job_id: &str, output: &str) -> Result<String, Error>`
+- `odcisk_promptu(tokenizer_hash: &str, client_nonce: &str, prompt_token_ids: &[u32]) -> Result<String, Error>`
+- `lancuch_tokenow(prompt_digest: &str, output_token_ids: &[u32]) -> String`
+- `odcisk_tokenizera(surowe_bajty_tokenizera: &[u8]) -> Result<String, Error>`
+- `Receipt::z_wiazaniem_m1(self, runtime, tokenizer_hash, client_nonce, prompt_token_ids, output_token_ids, params_digest, seed) -> Result<Self, Error>`
+- `Receipt::zweryfikuj_m1(&self, oczekiwany_tokenizer_hash, oczekiwany_nonce, prompt_token_ids, output_token_ids) -> Result<(), Error>`

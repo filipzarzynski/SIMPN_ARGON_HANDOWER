@@ -65,22 +65,22 @@ is_allowed_file() {
     local f="$1"
     case "$TRACK" in
         A)
-            [[ "$f" == "crates/simon-cli/src/node.rs" ]]
+            [[ "$f" == "crates/simon-cli/src/node.rs" || "$f" == "crates/simon-cli/src/main.rs" ]]
             ;;
         B)
-            [[ "$f" == "crates/simon-cli/src/agent.rs" || "$f" == "crates/simon-cli/src/wspolne.rs" ]]
+            [[ "$f" == "crates/simon-harness/src/request_response.rs" || "$f" == "crates/simon-cli/src/wspolne.rs" || "$f" == "crates/simon-cli/src/agent.rs" ]]
             ;;
         C)
             [[ "$f" == tools/simon-industry/* || "$f" == "ui/src/lib/industry-run.json" || "$f" == "ui/src/routes/industry/+page.svelte" ]]
             ;;
         D)
-            [[ "$f" == crates/simon-core/src/* || "$f" == "crates/simon-verify-wasm/src/lib.rs" ]]
+            [[ "$f" == crates/simon-core/src/* || "$f" == crates/simon-core/tests/* || "$f" == "crates/simon-verify-wasm/src/lib.rs" ]]
             ;;
         E)
             [[ "$f" == "crates/simon-cli/src/coord.rs" || "$f" == "crates/simon-cli/src/mapreduce.rs" || "$f" == "crates/simon-node/src/lib.rs" ]]
             ;;
         F)
-            [[ "$f" == "README.md" || "$f" == "docs/zgloszenie/LABLAB-SUBMISSION.md" || "$f" == "ui/src/routes/demo/+page.svelte" || "$f" == "ui/src/routes/network/+page.svelte" || "$f" == "tools/simon-api/simon_api.py" || "$f" == "tools/simon-verifier/verifier_loop.py" || "$f" == "demo/app.py" || "$f" == "demo/app.en.py" ]]
+            [[ "$f" == "README.md" || "$f" == "docs/zgloszenie/LABLAB-SUBMISSION.md" || "$f" == "ui/src/routes/demo/+page.svelte" || "$f" == "ui/src/routes/network/+page.svelte" || "$f" == "ui/src/lib/components/NodePanel.svelte" || "$f" == "tools/simon-api/simon_api.py" || "$f" == "tools/simon-verifier/verifier_loop.py" || "$f" == "demo/app.py" || "$f" == "demo/app.en.py" ]]
             ;;
         G)
             [[ "$f" == "docs/ARCHITECTURE.md" || "$f" == "docs/THREAT-MODEL.md" || "$f" == "ROADMAP.md" || "$f" == "docs/whitepaper/SIMON-whitepaper-EN.md" ]]
@@ -131,13 +131,17 @@ echo "========================================================================"
 case "$TRACK" in
     A|B|H)
         python3 scripts/wartownik_stalych.py
-        cargo test -p simon-core -p simon-cli
-        cargo clippy -p simon-cli -- -D warnings
+        cargo test -p simon-core -p simon-harness -p simon-cli
+        cargo clippy -p simon-harness -p simon-cli -- -D warnings
         ;;
     C)
-        python3 tools/simon-industry/rules.py --self-test
+        python3 tools/simon-industry/rules.py
         python3 -m py_compile tools/simon-industry/rules.py tools/simon-industry/tickets.py tools/simon-industry/export_ui.py
-        python3 -c 'import json; d=json.load(open("ui/src/lib/industry-run.json")); assert len(d["tickets"]) > 0; print("industry-run.json tickets:", len(d["tickets"]))'
+        if [ -f "tools/simon-industry/agent_triage.py" ]; then
+            python3 -m py_compile tools/simon-industry/agent_triage.py
+            python3 tools/simon-industry/agent_triage.py --selfcheck
+        fi
+        python3 -c 'import json; d=json.load(open("ui/src/lib/industry-run.json")); assert len(d["records"]) > 0 and d["summary"]["tickets"] > 0; print("industry-run.json records:", len(d["records"]), "tickets:", d["summary"]["tickets"])'
         if [ -d "ui" ]; then
             (cd ui && ([ -d node_modules ] || npm install --no-audit --no-fund) && npm run check && npm run build)
         fi

@@ -8,7 +8,7 @@ You are an autonomous Antigravity coding agent operating inside **`SIMPN_ARGON_H
 
 To protect the upstream `Szpili/SIMON` `main` branch and eliminate the **Team Captain review bottleneck**:
 1. **Dedicated Base Branch (`fz-contrib`)**: Every Track agent branches off **`fz-contrib`** into `fz/track-<X>-<slug>` and targets **`fz-contrib`** (NEVER `main`) when creating a Pull Request.
-2. **Self-Contained, Cherry-Pickable Commits (`[FZ-<X><N>]`)**: Prefix every commit message with `[FZ-<X>1]`, `[FZ-<X>2]`, etc. (e.g., `[FZ-A1] fix(node): populate real Unix timestamp_us in live Receipt (BUG-01)`). Every single commit MUST compile and pass tests independently so the Team Captain can cherry-pick individual fixes onto `main` in seconds.
+2. **Self-Contained, Cherry-Pickable Commits (`[FZ-<X><N>]`)**: Prefix every commit message with `[FZ-<X>1]`, `[FZ-<X>2]`, etc. (e.g., `[FZ-A1] fix(node): populate real started_at_us and finished_at_us in live Receipt`). Every single commit MUST compile and pass tests independently so the Team Captain can cherry-pick individual fixes onto `main` in seconds.
 
 ---
 
@@ -16,15 +16,15 @@ To protect the upstream `Szpili/SIMON` `main` branch and eliminate the **Team Ca
 
 When prompted with `"you are track <X> agent..."`, locate your assigned row below and obey its **Subfolder**, **Branch**, **Task Spec**, and **Exclusive File Scope**:
 
-### Stage 1 Tracks (Independent & Disjoint — Can Run in Parallel or in Priority Waves)
+### Stage 1 Tracks (100% Disjoint File Scopes — Can Run in Parallel or in Priority Waves)
 
 | Track | Wave | PR ID | Dedicated Clone Subfolder | Dedicated Track Branch (`-> fz-contrib`) | Task Specification | Exclusive File Ownership (ONLY touch these files) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Track D** | **1A (Urgent)** | `PR-4` | `workspaces/track_D` | `fz/track-D-core-security-hardening` | [`parallel_agents/track_D_core_security_and_wasm_fixes/TASK_SPEC.md`](./parallel_agents/track_D_core_security_and_wasm_fixes/TASK_SPEC.md) | `crates/simon-core/src/**`, `crates/simon-verify-wasm/src/lib.rs` |
-| **Track A** | **1A (Urgent)** | `PR-1` | `workspaces/track_A` | `fz/track-A-node-receipt-truth` | [`parallel_agents/track_A_receipt_and_node_truth/TASK_SPEC.md`](./parallel_agents/track_A_receipt_and_node_truth/TASK_SPEC.md) | `crates/simon-cli/src/node.rs` |
-| **Track F** | **1A (Urgent)** | `PR-6` | `workspaces/track_F` | `fz/track-F-submission-and-ui-polish` | [`parallel_agents/track_F_submission_and_ui_polish/TASK_SPEC.md`](./parallel_agents/track_F_submission_and_ui_polish/TASK_SPEC.md) | `README.md`, `docs/zgloszenie/LABLAB-SUBMISSION.md`, `ui/src/routes/demo/+page.svelte`, `ui/src/routes/network/+page.svelte`, `tools/simon-api/simon_api.py`, `tools/simon-verifier/verifier_loop.py`, `demo/app.py`, `demo/app.en.py` |
+| **Track D** | **1A (Urgent)** | `PR-4` | `workspaces/track_D` | `fz/track-D-core-security-hardening` | [`parallel_agents/track_D_core_security_and_wasm_fixes/TASK_SPEC.md`](./parallel_agents/track_D_core_security_and_wasm_fixes/TASK_SPEC.md) | `crates/simon-core/src/**`, `crates/simon-core/tests/**`, `crates/simon-verify-wasm/src/lib.rs` |
+| **Track A** | **1A (Urgent)** | `PR-1` | `workspaces/track_A` | `fz/track-A-node-receipt-truth` | [`parallel_agents/track_A_receipt_and_node_truth/TASK_SPEC.md`](./parallel_agents/track_A_receipt_and_node_truth/TASK_SPEC.md) | `crates/simon-cli/src/node.rs`, `crates/simon-cli/src/main.rs` |
+| **Track F** | **1A (Urgent)** | `PR-6` | `workspaces/track_F` | `fz/track-F-submission-and-ui-polish` | [`parallel_agents/track_F_submission_and_ui_polish/TASK_SPEC.md`](./parallel_agents/track_F_submission_and_ui_polish/TASK_SPEC.md) | `README.md`, `docs/zgloszenie/LABLAB-SUBMISSION.md`, `ui/src/routes/demo/+page.svelte`, `ui/src/routes/network/+page.svelte`, `ui/src/lib/components/NodePanel.svelte`, `tools/simon-api/simon_api.py`, `tools/simon-verifier/verifier_loop.py`, `demo/app.py`, `demo/app.en.py` |
 | **Track C** | **1B (Feature)** | `PR-3` | `workspaces/track_C` | `fz/track-C-industry-m7-agent` | [`parallel_agents/track_C_industry_gemma4_live_agent/TASK_SPEC.md`](./parallel_agents/track_C_industry_gemma4_live_agent/TASK_SPEC.md) | `tools/simon-industry/**`, `ui/src/lib/industry-run.json`, `ui/src/routes/industry/+page.svelte` |
-| **Track B** | **1B (Feature)** | `PR-2` | `workspaces/track_B` | `fz/track-B-live-m1-receipts` | [`parallel_agents/track_B_live_m1_token_binding/TASK_SPEC.md`](./parallel_agents/track_B_live_m1_token_binding/TASK_SPEC.md) | `crates/simon-cli/src/agent.rs`, `crates/simon-cli/src/wspolne.rs` |
+| **Track B** | **1B (Feature)** | `PR-2` | `workspaces/track_B` | `fz/track-B-live-m1-receipts` | [`parallel_agents/track_B_live_m1_token_binding/TASK_SPEC.md`](./parallel_agents/track_B_live_m1_token_binding/TASK_SPEC.md) | `crates/simon-harness/src/request_response.rs`, `crates/simon-cli/src/wspolne.rs`, `crates/simon-cli/src/agent.rs` |
 | **Track E** | **1B (Feature)** | `PR-5` | `workspaces/track_E` | `fz/track-E-coordinator-gossipsub-bridge` | [`parallel_agents/track_E_p2p_coordinator_bridge/TASK_SPEC.md`](./parallel_agents/track_E_p2p_coordinator_bridge/TASK_SPEC.md) | `crates/simon-cli/src/coord.rs`, `crates/simon-cli/src/mapreduce.rs`, `crates/simon-node/src/lib.rs` |
 
 ### Stage 2 Tracks (Run AFTER Stage 1 Tracks A–F Are Integrated into `fz-contrib`)
@@ -59,12 +59,13 @@ Every Track agent MUST execute these 5 phases in order:
 ### Phase 3: Implement in Self-Contained, Cherry-Pickable Commits
 1. **Strict Scope Rule**: NEVER modify any file outside your Track's **Exclusive File Ownership** column. Do NOT touch `/home/agent/SIMON`.
 2. **Cherry-Pickable Commit Rule**:
-   - Implement one sub-task (`Task <X>.1`, `Task <X>.2`, ...) at a time inside `workspaces/track_<X>`.
+   - Implement one sub-task (`Task <X>1`, `Task <X>2`, ...) at a time inside `workspaces/track_<X>`.
    - Compile and run tests after **each** sub-task (`export PATH="/home/agent/.cargo/bin:$PATH"`).
    - Commit with `[FZ-<X><N>]` prefix:
-     - `[FZ-A1] fix(node): populate Unix epoch timestamp_us in live receipts (BUG-01)`
-     - `[FZ-A2] fix(node): derive BackendConfig precision from GGUF filename (BUG-02)`
-     - `[FZ-A3] fix(node): verify GGUF SHA-256 against --weights-hash at startup (BUG-05)`
+     - `[FZ-A1] fix(node): populate real started_at_us and finished_at_us in live receipts`
+     - `[FZ-A2] fix(node): infer Receipt Precision from model_hash instead of hardcoded Fp16`
+     - `[FZ-A3] fix(node): detect llama.cpp runtime via /props and support llama-server /tokenize`
+     - `[FZ-A4] feat(cli): add --expect-signer verification to simon verify`
    - Each commit must be 100% self-contained so the Team Captain can `git cherry-pick` it in isolation.
 
 ### Phase 4: Multi-Pass Verification (`simon-verify-suite` skill)

@@ -22,14 +22,14 @@ case "$TRACK" in
         BRANCH="fz/track-A-node-receipt-truth"
         TRACK_DIR_NAME="track_A_receipt_and_node_truth"
         PR_ID="PR-1"
-        ALLOWED_FILES="crates/simon-cli/src/node.rs"
+        ALLOWED_FILES="crates/simon-cli/src/node.rs, crates/simon-cli/src/main.rs"
         ;;
     B)
         STAGE="1"
         BRANCH="fz/track-B-live-m1-receipts"
         TRACK_DIR_NAME="track_B_live_m1_token_binding"
         PR_ID="PR-2"
-        ALLOWED_FILES="crates/simon-cli/src/agent.rs, crates/simon-cli/src/wspolne.rs"
+        ALLOWED_FILES="crates/simon-harness/src/request_response.rs, crates/simon-cli/src/wspolne.rs, crates/simon-cli/src/agent.rs"
         ;;
     C)
         STAGE="1"
@@ -43,7 +43,7 @@ case "$TRACK" in
         BRANCH="fz/track-D-core-security-hardening"
         TRACK_DIR_NAME="track_D_core_security_and_wasm_fixes"
         PR_ID="PR-4"
-        ALLOWED_FILES="crates/simon-core/src/**, crates/simon-verify-wasm/src/lib.rs"
+        ALLOWED_FILES="crates/simon-core/src/**, crates/simon-core/tests/**, crates/simon-verify-wasm/src/lib.rs"
         ;;
     E)
         STAGE="1"
@@ -57,7 +57,7 @@ case "$TRACK" in
         BRANCH="fz/track-F-submission-and-ui-polish"
         TRACK_DIR_NAME="track_F_submission_and_ui_polish"
         PR_ID="PR-6"
-        ALLOWED_FILES="README.md, docs/zgloszenie/LABLAB-SUBMISSION.md, ui/src/routes/demo/+page.svelte, ui/src/routes/network/+page.svelte, tools/simon-api/simon_api.py, tools/simon-verifier/verifier_loop.py, demo/app.py, demo/app.en.py"
+        ALLOWED_FILES="README.md, docs/zgloszenie/LABLAB-SUBMISSION.md, ui/src/routes/demo/+page.svelte, ui/src/routes/network/+page.svelte, ui/src/lib/components/NodePanel.svelte, tools/simon-api/simon_api.py, tools/simon-verifier/verifier_loop.py, demo/app.py, demo/app.en.py"
         ;;
     G)
         STAGE="2"
