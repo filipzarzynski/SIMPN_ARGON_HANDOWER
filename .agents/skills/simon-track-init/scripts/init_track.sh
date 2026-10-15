@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <A|B|C|D|E|F> [UPSTREAM_URL]"
+    echo "Usage: $0 <A|B|C|D|E|F|G|H|I> [UPSTREAM_URL]"
     exit 1
 fi
 
@@ -10,6 +10,7 @@ TRACK_RAW="$(echo "$1" | tr '[:lower:]' '[:upper:]')"
 TRACK="${TRACK_RAW#TRACK_}"
 TRACK="${TRACK#TRACK}"
 UPSTREAM_URL="${2:-https://github.com/Szpili/SIMON.git}"
+BASE_BRANCH="fz-contrib"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HANDOVER_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
@@ -17,43 +18,70 @@ LOCAL_CACHE_REPO="/home/agent/SIMON"
 
 case "$TRACK" in
     A)
-        BRANCH="fix/node-receipt-truth"
+        STAGE="1"
+        BRANCH="fz/track-A-node-receipt-truth"
         TRACK_DIR_NAME="track_A_receipt_and_node_truth"
         PR_ID="PR-1"
         ALLOWED_FILES="crates/simon-cli/src/node.rs"
         ;;
     B)
-        BRANCH="feat/live-m1-receipts"
+        STAGE="1"
+        BRANCH="fz/track-B-live-m1-receipts"
         TRACK_DIR_NAME="track_B_live_m1_token_binding"
         PR_ID="PR-2"
         ALLOWED_FILES="crates/simon-cli/src/agent.rs, crates/simon-cli/src/wspolne.rs"
         ;;
     C)
-        BRANCH="feat/industry-m7-agent"
+        STAGE="1"
+        BRANCH="fz/track-C-industry-m7-agent"
         TRACK_DIR_NAME="track_C_industry_gemma4_live_agent"
         PR_ID="PR-3"
         ALLOWED_FILES="tools/simon-industry/**, ui/src/lib/industry-run.json, ui/src/routes/industry/+page.svelte"
         ;;
     D)
-        BRANCH="fix/core-security-hardening"
+        STAGE="1"
+        BRANCH="fz/track-D-core-security-hardening"
         TRACK_DIR_NAME="track_D_core_security_and_wasm_fixes"
         PR_ID="PR-4"
         ALLOWED_FILES="crates/simon-core/src/**, crates/simon-verify-wasm/src/lib.rs"
         ;;
     E)
-        BRANCH="feat/coordinator-gossipsub-bridge"
+        STAGE="1"
+        BRANCH="fz/track-E-coordinator-gossipsub-bridge"
         TRACK_DIR_NAME="track_E_p2p_coordinator_bridge"
         PR_ID="PR-5"
         ALLOWED_FILES="crates/simon-cli/src/coord.rs, crates/simon-cli/src/mapreduce.rs, crates/simon-node/src/lib.rs"
         ;;
     F)
-        BRANCH="fix/submission-and-ui-polish"
+        STAGE="1"
+        BRANCH="fz/track-F-submission-and-ui-polish"
         TRACK_DIR_NAME="track_F_submission_and_ui_polish"
         PR_ID="PR-6"
         ALLOWED_FILES="README.md, docs/zgloszenie/LABLAB-SUBMISSION.md, ui/src/routes/demo/+page.svelte, ui/src/routes/network/+page.svelte, tools/simon-api/simon_api.py, tools/simon-verifier/verifier_loop.py, demo/app.py, demo/app.en.py"
         ;;
+    G)
+        STAGE="2"
+        BRANCH="fz/track-G-architecture-and-docs-overhaul"
+        TRACK_DIR_NAME="track_G_architecture_and_docs_overhaul"
+        PR_ID="PR-7"
+        ALLOWED_FILES="docs/ARCHITECTURE.md, docs/THREAT-MODEL.md, ROADMAP.md, docs/whitepaper/SIMON-whitepaper-EN.md"
+        ;;
+    H)
+        STAGE="2"
+        BRANCH="fz/track-H-e2e-integration-and-live-m1-bridge"
+        TRACK_DIR_NAME="track_H_e2e_integration_and_live_m1_bridge"
+        PR_ID="PR-8"
+        ALLOWED_FILES="crates/simon-cli/src/node.rs, crates/simon-cli/tests/e2e_m1_receipt.rs"
+        ;;
+    I)
+        STAGE="2"
+        BRANCH="fz/track-I-captain-cherry-pick-menu-and-ci"
+        TRACK_DIR_NAME="track_I_captain_cherry_pick_menu_and_ci"
+        PR_ID="PR-9"
+        ALLOWED_FILES="docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md, scripts/verify_all_fast.sh"
+        ;;
     *)
-        echo "ERROR: Invalid track '$1'. Must be one of: A, B, C, D, E, F"
+        echo "ERROR: Invalid track '$1'. Must be one of: A, B, C, D, E, F (Stage 1) or G, H, I (Stage 2)"
         exit 1
         ;;
 esac
@@ -66,7 +94,7 @@ SPEC_DIR="$HANDOVER_ROOT/parallel_agents/${TRACK_DIR_NAME}"
 
 mkdir -p "$WORKSPACES_DIR"
 
-# Concurrency-safe initialization of the shared local integration hub
+# Concurrency-safe initialization of the shared local integration hub & fz-contrib base branch
 (
     flock -x 200
     if [ ! -d "$HUB_REPO" ]; then
@@ -78,6 +106,14 @@ mkdir -p "$WORKSPACES_DIR"
         fi
     else
         git -C "$HUB_REPO" fetch origin "+refs/heads/main:refs/heads/main" 2>/dev/null || true
+        git -C "$HUB_REPO" fetch origin "+refs/heads/$BASE_BRANCH:refs/heads/$BASE_BRANCH" 2>/dev/null || true
+    fi
+
+    # Ensure fz-contrib branch exists in the hub (initialized from main if not yet created)
+    if ! git -C "$HUB_REPO" show-ref --verify --quiet "refs/heads/$BASE_BRANCH"; then
+        MAIN_SHA="$(git -C "$HUB_REPO" rev-parse refs/heads/main)"
+        git -C "$HUB_REPO" update-ref "refs/heads/$BASE_BRANCH" "$MAIN_SHA"
+        echo "[Track $TRACK] Created integration base branch '$BASE_BRANCH' at main ($MAIN_SHA)"
     fi
 ) 200>"$LOCK_FILE"
 
@@ -91,13 +127,13 @@ if [ ! -d "$CLONE_DIR/.git" ]; then
         git clone "$UPSTREAM_URL" "$CLONE_DIR"
     fi
 else
-    echo "[Track $TRACK] Existing clone found at $CLONE_DIR; fetching latest origin..."
+    echo "[Track $TRACK] Existing clone found at $CLONE_DIR; fetching latest..."
     git -C "$CLONE_DIR" fetch origin
 fi
 
 # Configure git identity and remotes inside the clone
-git -C "$CLONE_DIR" config user.name "SIMON Track $TRACK Agent"
-git -C "$CLONE_DIR" config user.email "track-${TRACK,,}@simon-argon.local"
+git -C "$CLONE_DIR" config user.name "FZ (Track $TRACK)"
+git -C "$CLONE_DIR" config user.email "fz-track-${TRACK,,}@simon-argon.local"
 
 if git -C "$CLONE_DIR" remote get-url hub >/dev/null 2>&1; then
     git -C "$CLONE_DIR" remote set-url hub "$HUB_REPO"
@@ -105,14 +141,20 @@ else
     git -C "$CLONE_DIR" remote add hub "$HUB_REPO"
 fi
 
-# Checkout or create the dedicated branch
+git -C "$CLONE_DIR" fetch hub
+
+# Ensure local fz-contrib tracking ref exists
+git -C "$CLONE_DIR" branch -f "$BASE_BRANCH" "hub/$BASE_BRANCH"
+
+# Checkout or create the dedicated track branch off fz-contrib
 if git -C "$CLONE_DIR" show-ref --verify --quiet "refs/heads/$BRANCH"; then
     git -C "$CLONE_DIR" checkout "$BRANCH"
 else
-    git -C "$CLONE_DIR" checkout -b "$BRANCH" origin/main
+    git -C "$CLONE_DIR" checkout -b "$BRANCH" "hub/$BASE_BRANCH"
 fi
 
 # Create convenience symlink inside parallel_agents/track_<X>_*/repo
+mkdir -p "$SPEC_DIR"
 ln -sfn "$CLONE_DIR" "$SPEC_DIR/repo"
 
 # Configure .git/info/exclude so local AGENTS.md and .agents symlink never appear as untracked in git status
@@ -126,10 +168,11 @@ done
 # Link workspace skills into the clone root and generate track-scoped AGENTS.md
 ln -sfn "$HANDOVER_ROOT/.agents" "$CLONE_DIR/.agents"
 cat > "$CLONE_DIR/AGENTS.md" <<EOF
-# Track $TRACK ($PR_ID) Local Clone Rules
+# Track $TRACK ($PR_ID — Stage $STAGE) Local Clone Rules
 
-- **Assigned Track**: Track $TRACK ($PR_ID)
-- **Dedicated Branch**: \`$BRANCH\`
+- **Assigned Track**: Track $TRACK ($PR_ID, Stage $STAGE)
+- **Target PR Base Branch**: \`$BASE_BRANCH\` (**NEVER** PR directly to \`main\`!)
+- **Dedicated Track Branch**: \`$BRANCH\`
 - **Clone Directory**: \`$CLONE_DIR\`
 - **Task Specification**: [\`$SPEC_DIR/TASK_SPEC.md\`](file://$SPEC_DIR/TASK_SPEC.md)
 - **Common Rules**: [\`$HANDOVER_ROOT/parallel_agents/AGENT_RULES_COMMON.md\`](file://$HANDOVER_ROOT/parallel_agents/AGENT_RULES_COMMON.md)
@@ -137,19 +180,19 @@ cat > "$CLONE_DIR/AGENTS.md" <<EOF
 
 ## Strict Constraints
 1. **NEVER** edit or stage any file outside: \`$ALLOWED_FILES\`.
-2. Prepend \`export PATH="/home/agent/.cargo/bin:\$PATH"\` when running \`cargo\`, \`rustc\`, or \`wasm-pack\`.
-3. Commit logically and granularly after each sub-task in \`TASK_SPEC.md\` only after tests pass.
-4. Run \`bash $HANDOVER_ROOT/.agents/skills/simon-verify-suite/scripts/verify_track.sh $TRACK\` before finishing.
-5. Run \`python3 $HANDOVER_ROOT/.agents/skills/simon-pr-delivery/scripts/prepare_and_create_pr.py --track $TRACK\` to verify mergeability and create the PR.
+2. **Cherry-Pickable Granular Commits**: Prefix every commit message with \`[FZ-${TRACK}1]\`, \`[FZ-${TRACK}2]\`, etc. (e.g. \`[FZ-${TRACK}1] fix(...): ...\`). Each commit MUST compile and pass tests independently so the Team Captain can cherry-pick individual commits onto \`main\`.
+3. Prepend \`export PATH="/home/agent/.cargo/bin:\$PATH"\` when running \`cargo\`, \`rustc\`, or \`wasm-pack\`.
+4. Run \`bash $HANDOVER_ROOT/.agents/skills/simon-verify-suite/scripts/verify_track.sh $TRACK --final\` before finishing.
+5. Run \`python3 $HANDOVER_ROOT/.agents/skills/simon-pr-delivery/scripts/prepare_and_create_pr.py --track $TRACK\` to rebase onto \`$BASE_BRANCH\`, integrate into \`$BASE_BRANCH\`, and create the PR targeting \`$BASE_BRANCH\`.
 EOF
 
 echo "========================================================================"
-echo " Track $TRACK ($PR_ID) Workspace Initialized Successfully!"
+echo " Track $TRACK ($PR_ID — Stage $STAGE) Workspace Initialized Successfully!"
 echo "------------------------------------------------------------------------"
 echo " Clone Directory : $CLONE_DIR"
 echo " Symlink         : $SPEC_DIR/repo"
+echo " Base Branch     : $BASE_BRANCH ($(git -C "$CLONE_DIR" rev-parse --short "hub/$BASE_BRANCH"))"
 echo " Active Branch   : $(git -C "$CLONE_DIR" branch --show-current)"
-echo " Base Commit     : $(git -C "$CLONE_DIR" rev-parse --short HEAD)"
 echo " Task Spec       : $SPEC_DIR/TASK_SPEC.md"
 echo " Permitted Files : $ALLOWED_FILES"
 echo " Git Status      : $(git -C "$CLONE_DIR" status --short | wc -l) modified/untracked files"

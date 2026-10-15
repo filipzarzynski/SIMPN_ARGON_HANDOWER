@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <A|B|C|D|E|F> [--final]"
+    echo "Usage: $0 <A|B|C|D|E|F|G|H|I> [--final]"
     exit 1
 fi
 
@@ -23,9 +23,24 @@ if [ ! -d "$CLONE_DIR/.git" ]; then
 fi
 
 cd "$CLONE_DIR"
+git fetch hub 2>/dev/null || true
+
+# Stage 1 tracks compare against origin/main; Stage 2 tracks compare against hub/fz-contrib
+case "$TRACK" in
+    A|B|C|D|E|F)
+        DIFF_BASE="origin/main"
+        ;;
+    G|H|I)
+        DIFF_BASE="hub/fz-contrib"
+        ;;
+    *)
+        echo "ERROR: Invalid track '$TRACK'."
+        exit 1
+        ;;
+esac
 
 echo "========================================================================"
-echo " [Pass 1/3] Auditing File Scope & Working Tree for Track $TRACK"
+echo " [Pass 1/3] Auditing File Scope & Working Tree for Track $TRACK (vs $DIFF_BASE)"
 echo "========================================================================"
 
 if [ "$FINAL_MODE" = "--final" ]; then
@@ -37,10 +52,10 @@ if [ "$FINAL_MODE" = "--final" ]; then
     fi
 fi
 
-CHANGED_FILES="$( (git diff --name-only origin/main...HEAD; git diff --name-only; git diff --name-only --cached) | sort -u | sed '/^$/d' )"
+CHANGED_FILES="$( (git diff --name-only "$DIFF_BASE"...HEAD; git diff --name-only; git diff --name-only --cached) | sort -u | sed '/^$/d' )"
 
 if [ -z "$CHANGED_FILES" ]; then
-    echo "WARNING: No changed files detected relative to origin/main yet."
+    echo "WARNING: No changed files detected relative to $DIFF_BASE yet."
 else
     echo "Changed files:"
     echo "$CHANGED_FILES" | sed 's/^/  - /'
@@ -67,6 +82,15 @@ is_allowed_file() {
         F)
             [[ "$f" == "README.md" || "$f" == "docs/zgloszenie/LABLAB-SUBMISSION.md" || "$f" == "ui/src/routes/demo/+page.svelte" || "$f" == "ui/src/routes/network/+page.svelte" || "$f" == "tools/simon-api/simon_api.py" || "$f" == "tools/simon-verifier/verifier_loop.py" || "$f" == "demo/app.py" || "$f" == "demo/app.en.py" ]]
             ;;
+        G)
+            [[ "$f" == "docs/ARCHITECTURE.md" || "$f" == "docs/THREAT-MODEL.md" || "$f" == "ROADMAP.md" || "$f" == "docs/whitepaper/SIMON-whitepaper-EN.md" ]]
+            ;;
+        H)
+            [[ "$f" == "crates/simon-cli/src/node.rs" || "$f" == "crates/simon-cli/tests/e2e_m1_receipt.rs" ]]
+            ;;
+        I)
+            [[ "$f" == "docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md" || "$f" == "scripts/verify_all_fast.sh" ]]
+            ;;
         *)
             return 1
             ;;
@@ -89,14 +113,14 @@ fi
 echo "PASS 1 OK: All modified files are strictly within Track $TRACK's permitted scope."
 
 echo "========================================================================"
-echo " [Pass 2/3] Auditing Commit History for Track $TRACK"
+echo " [Pass 2/3] Auditing Granular Cherry-Pickable Commits for Track $TRACK"
 echo "========================================================================"
-COMMIT_COUNT="$(git rev-list --count origin/main..HEAD)"
-echo "Commits ahead of origin/main: $COMMIT_COUNT"
-git log --oneline origin/main..HEAD | sed 's/^/  /'
+COMMIT_COUNT="$(git rev-list --count "$DIFF_BASE"..HEAD)"
+echo "Commits ahead of $DIFF_BASE: $COMMIT_COUNT"
+git log --oneline "$DIFF_BASE"..HEAD | sed 's/^/  /'
 
 if [ "$FINAL_MODE" = "--final" ] && [ "$COMMIT_COUNT" -lt 1 ]; then
-    echo "ERROR: No commits found on branch ahead of origin/main in --final mode."
+    echo "ERROR: No commits found on branch ahead of $DIFF_BASE in --final mode."
     exit 1
 fi
 
@@ -105,7 +129,7 @@ echo " [Pass 3/3] Running Verification & Test Suites for Track $TRACK"
 echo "========================================================================"
 
 case "$TRACK" in
-    A|B)
+    A|B|H)
         python3 scripts/wartownik_stalych.py
         cargo test -p simon-core -p simon-cli
         cargo clippy -p simon-cli -- -D warnings
@@ -132,6 +156,12 @@ case "$TRACK" in
         python3 -m py_compile tools/simon-api/simon_api.py tools/simon-verifier/verifier_loop.py demo/app.py demo/app.en.py
         if [ -d "ui" ]; then
             (cd ui && ([ -d node_modules ] || npm install --no-audit --no-fund) && npm run check && npm run build)
+        fi
+        ;;
+    G|I)
+        python3 scripts/wartownik_stalych.py
+        if [ -f "scripts/verify_all_fast.sh" ]; then
+            bash scripts/verify_all_fast.sh
         fi
         ;;
 esac
