@@ -1,21 +1,22 @@
-# Pull Request Submission Report — Track A (PR-1, Stage 1)
+# Pull Request Submission Report — Track A ([FZ-A], Stage 1) — Upstream PR #5
 
 - **Generated At**: `2026-10-15T21:06:08Z`
-- **Track**: Track A (`PR-1`)
+- **Track**: Track A (`[FZ-A]`)
 - **Track Branch**: `fz/track-A-node-receipt-truth`
 - **Target PR Base Branch**: `fz-contrib` (**NEVER** directly to `main`)
 - **HEAD Commit**: `02010bef0d5d7ecca145f0ac47d3a3e319e10cd0`
 - **Integrated into Local Hub `fz-contrib`**: `YES (Linear / Cherry-Pickable)`
-- **Portable Git Bundle**: `/home/agent/SIMPN_ARGON_HANDOWER/parallel_agents/track_A_receipt_and_node_truth/PR-1_A.bundle`
-- **Remote Push (`fork`)**: `PUSHED`
-- **GitHub PR URL (into `fz-contrib`)**: `Ready to open from fz/track-A-node-receipt-truth -> fz-contrib`
+- **Portable Git Bundle**: `/home/agent/SIMPN_ARGON_HANDOWER/parallel_agents/track_A_receipt_and_node_truth/FZ-A.bundle`
+- **Upstream GitHub PR (Szpili/SIMON)**: `https://github.com/Szpili/SIMON/pull/5` (WAITING FOR MERGE)
+- **Fork PR (filipzarzynski/SIMON)**: `https://github.com/filipzarzynski/SIMON/pull/3`
+- **Target Integration Base**: `fz-contrib` / `main`
 
 ---
 
 ## PR Title
 `[FZ-A] fix(node): populate real Unix timestamp_us, dynamic GGUF precision, and weight SHA-256 verification`
 
-## Summary (PR-1 — Track A, Stage 1)
+## Summary (Track A — [FZ-A], Stage 1)
 
 - **Target Integration Branch**: `fz-contrib` *(does **not** touch `main` directly; prepared for Team Captain review / cherry-pick)*
 - **Addresses Audit Findings**: `BUG-01`, `BUG-02`, `BUG-05`

@@ -1,6 +1,7 @@
-# Track B — Wire Proof Level 1 (`WiazaniaM1`) Transport, `/tokenize` Helper & Agent Verifier (`PR-2`)
+# Track B — Wire Proof Level 1 (`WiazaniaM1`) Transport, `/tokenize` Helper & Agent Verifier (`[FZ-B]`)
 
 **Stage:** Stage 1 (Wave 1B — Feature)  
+**Status:** **Integrated in `fz-contrib`**  
 **Target PR Base Branch:** `fz-contrib` (**NEVER** `main`)  
 **Dedicated Track Branch:** `fz/track-B-live-m1-receipts`  
 **Dedicated Clone Subfolder:** `/home/agent/SIMPN_ARGON_HANDOWER/workspaces/track_B`  

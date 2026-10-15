@@ -1,6 +1,7 @@
-# Track A — Fix Node Receipt Metadata Lies, `llama.cpp` Runtime/Tokenize & Signer Verification (`PR-1`)
+# Track A — Fix Node Receipt Metadata Lies, `llama.cpp` Runtime/Tokenize & Signer Verification (`[FZ-A]` · Upstream PR #5)
 
 **Stage:** Stage 1 (Wave 1A — Urgent)  
+**Live Upstream PR:** **[Szpili/SIMON PR #5](https://github.com/Szpili/SIMON/pull/5)** (Waiting for Merge)  
 **Target PR Base Branch:** `fz-contrib` (**NEVER** `main`)  
 **Dedicated Track Branch:** `fz/track-A-node-receipt-truth`  
 **Dedicated Clone Subfolder:** `/home/agent/SIMPN_ARGON_HANDOWER/workspaces/track_A`  

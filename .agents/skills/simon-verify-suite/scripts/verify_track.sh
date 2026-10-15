@@ -68,7 +68,7 @@ is_allowed_file() {
             [[ "$f" == "crates/simon-cli/src/node.rs" || "$f" == "crates/simon-cli/src/main.rs" || "$f" == "crates/simon-cli/src/agent.rs" ]]
             ;;
         B)
-            [[ "$f" == "crates/simon-harness/src/request_response.rs" || "$f" == "crates/simon-cli/src/wspolne.rs" || "$f" == "crates/simon-cli/src/agent.rs" ]]
+            [[ "$f" == "crates/simon-harness/src/request_response.rs" || "$f" == "crates/simon-cli/src/wspolne.rs" || "$f" == "crates/simon-cli/src/agent.rs" || "$f" == "crates/simon-cli/src/node.rs" ]]
             ;;
         C)
             [[ "$f" == tools/simon-industry/* || "$f" == "ui/src/lib/industry-run.json" || "$f" == "ui/src/routes/industry/+page.svelte" ]]

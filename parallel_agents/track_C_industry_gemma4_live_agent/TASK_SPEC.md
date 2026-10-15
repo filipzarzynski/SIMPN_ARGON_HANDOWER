@@ -1,6 +1,7 @@
-# Track C — Upgrade Intelligent Industry with M7 Capability Grants (`Zezwolenie`), Autonomous Tool-Calling Triage & Interactive UI (`PR-3`)
+# Track C — Upgrade Intelligent Industry with M7 Capability Grants (`Zezwolenie`), Autonomous Tool-Calling Triage & Interactive UI (`[FZ-C]`)
 
 **Stage:** Stage 1 (Wave 1B — Feature)  
+**Status:** **Integrated in `fz-contrib`** · **[Fork PR #5](https://github.com/filipzarzynski/SIMON/pull/5)**  
 **Target PR Base Branch:** `fz-contrib` (**NEVER** `main`)  
 **Dedicated Track Branch:** `fz/track-C-industry-m7-agent`  
 **Dedicated Clone Subfolder:** `/home/agent/SIMPN_ARGON_HANDOWER/workspaces/track_C`  

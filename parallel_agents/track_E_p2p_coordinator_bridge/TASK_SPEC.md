@@ -1,6 +1,7 @@
-# Track E — Fix P2P Coordinator VRF Selection, Registry Assignment Lifecycle & MapReduce Context Budgeting (`PR-5`)
+# Track E — Fix P2P Coordinator VRF Selection, Registry Assignment Lifecycle & MapReduce Context Budgeting (`[FZ-E]`)
 
 **Stage:** Stage 1 (Wave 1B — Feature)  
+**Status:** **Integrated in `fz-contrib`**  
 **Target PR Base Branch:** `fz-contrib` (**NEVER** `main`)  
 **Dedicated Track Branch:** `fz/track-E-coordinator-gossipsub-bridge`  
 **Dedicated Clone Subfolder:** `/home/agent/SIMPN_ARGON_HANDOWER/workspaces/track_E`  

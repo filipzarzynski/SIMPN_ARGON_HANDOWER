@@ -1,6 +1,7 @@
-# Track D — Fix All Core Security Vulnerabilities in `simon-core` & `simon-verify-wasm` (`PR-4`)
+# Track D — Fix All Core Security Vulnerabilities in `simon-core` & `simon-verify-wasm` (`[FZ-D]` · Upstream PR #4)
 
 **Stage:** Stage 1 (Wave 1A — Urgent)  
+**Live Upstream PR:** **[Szpili/SIMON PR #4](https://github.com/Szpili/SIMON/pull/4)** (Waiting for Merge)  
 **Target PR Base Branch:** `fz-contrib` (**NEVER** `main`)  
 **Dedicated Track Branch:** `fz/track-D-core-security-hardening`  
 **Dedicated Clone Subfolder:** `/home/agent/SIMPN_ARGON_HANDOWER/workspaces/track_D`  

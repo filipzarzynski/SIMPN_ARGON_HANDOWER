@@ -1,4 +1,4 @@
-# Agent Task Specification: Track G (Stage 2) — Architecture & Documentation Overhaul (`PR-7`)
+# Agent Task Specification: Track G (Stage 2) — Architecture & Documentation Overhaul (`[FZ-G]`)
 
 **Stage:** Stage 2 (Run AFTER Stage 1 Tracks A–F are integrated into `fz-contrib`)  
 **Target PR Base Branch:** `fz-contrib` (**NEVER** `main`)  

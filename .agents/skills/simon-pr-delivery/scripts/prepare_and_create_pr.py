@@ -23,7 +23,7 @@ BASE_BRANCH = "fz-contrib"
 TRACK_META = {
     "A": {
         "stage": 1,
-        "pr_id": "PR-1",
+        "tag": "FZ-A",
         "branch": "fz/track-A-node-receipt-truth",
         "dir_name": "track_A_receipt_and_node_truth",
         "title": "[FZ-A] fix(node): populate real Unix timestamp_us, dynamic GGUF precision, and weight SHA-256 verification",
@@ -31,7 +31,7 @@ TRACK_META = {
     },
     "B": {
         "stage": 1,
-        "pr_id": "PR-2",
+        "tag": "FZ-B",
         "branch": "fz/track-B-live-m1-receipts",
         "dir_name": "track_B_live_m1_token_binding",
         "title": "[FZ-B] feat(agent): wire live M1 TokenCommitment verification and M3 drift telemetry in simon-cli",
@@ -39,7 +39,7 @@ TRACK_META = {
     },
     "C": {
         "stage": 1,
-        "pr_id": "PR-3",
+        "tag": "FZ-C",
         "branch": "fz/track-C-industry-m7-agent",
         "dir_name": "track_C_industry_gemma4_live_agent",
         "title": "[FZ-C] feat(industry): upgrade Track 1 ticket generator to multi-turn Gemma 4 tool-calling agent with verified receipts",
@@ -47,7 +47,7 @@ TRACK_META = {
     },
     "D": {
         "stage": 1,
-        "pr_id": "PR-4",
+        "tag": "FZ-D",
         "branch": "fz/track-D-core-security-hardening",
         "dir_name": "track_D_core_security_and_wasm_fixes",
         "title": "[FZ-D] fix(core,wasm): enforce M0 signature in M1/WASM, block IPv6-mapped SSRF, NaN logprobs, and non-object Cap JSON",
@@ -55,7 +55,7 @@ TRACK_META = {
     },
     "E": {
         "stage": 1,
-        "pr_id": "PR-5",
+        "tag": "FZ-E",
         "branch": "fz/track-E-coordinator-gossipsub-bridge",
         "dir_name": "track_E_p2p_coordinator_bridge",
         "title": "[FZ-E] feat(node,cli): add HTTP LLM executor bridge to SimonNode and fix MapReduce chunk truncation",
@@ -63,7 +63,7 @@ TRACK_META = {
     },
     "F": {
         "stage": 1,
-        "pr_id": "PR-6",
+        "tag": "FZ-F",
         "branch": "fz/track-F-submission-and-ui-polish",
         "dir_name": "track_F_submission_and_ui_polish",
         "title": "[FZ-F] fix(ui,docs,tools): reconcile submission test/MI300X tables, clarify UI demo/network badges, and harden Python tools",
@@ -71,7 +71,7 @@ TRACK_META = {
     },
     "G": {
         "stage": 2,
-        "pr_id": "PR-7",
+        "tag": "FZ-G",
         "branch": "fz/track-G-architecture-and-docs-overhaul",
         "dir_name": "track_G_architecture_and_docs_overhaul",
         "title": "[FZ-G] docs(arch): add comprehensive ARCHITECTURE.md and align threat model & whitepaper with verified codebase",
@@ -79,7 +79,7 @@ TRACK_META = {
     },
     "H": {
         "stage": 2,
-        "pr_id": "PR-8",
+        "tag": "FZ-H",
         "branch": "fz/track-H-e2e-integration-and-live-m1-bridge",
         "dir_name": "track_H_e2e_integration_and_live_m1_bridge",
         "title": "[FZ-H] feat(cli): connect live node M1 token commitment builder with agent verifier and add E2E test",
@@ -87,7 +87,7 @@ TRACK_META = {
     },
     "I": {
         "stage": 2,
-        "pr_id": "PR-9",
+        "tag": "FZ-I",
         "branch": "fz/track-I-captain-cherry-pick-menu-and-ci",
         "dir_name": "track_I_captain_cherry_pick_menu_and_ci",
         "title": "[FZ-I] docs(contrib): generate Team Captain cherry-pick menu and fast full-stack verification script",
@@ -256,7 +256,7 @@ def main():
         + "\n".join(cherry_pick_rows)
     )
 
-    pr_body = f"""## Summary ({meta['pr_id']} — Track {track}, Stage {meta['stage']})
+    pr_body = f"""## Summary (Track {track} — [{meta['tag']}], Stage {meta['stage']})
 
 - **Target Integration Branch**: `{BASE_BRANCH}` *(does **not** touch `main` directly; prepared for Team Captain review / cherry-pick)*
 - **Addresses Audit Findings**: {', '.join(f'`{b}`' for b in meta['bugs'])}
@@ -305,15 +305,15 @@ Every commit on this branch is self-contained, compiles cleanly, and passes test
 
     # 4. Write git bundle and PR_SUBMISSION.md artifact in the track's spec folder
     spec_dir.mkdir(parents=True, exist_ok=True)
-    bundle_path = spec_dir / f"{meta['pr_id']}_{track}.bundle"
+    bundle_path = spec_dir / f"{meta['tag']}.bundle"
     run(["git", "bundle", "create", str(bundle_path), f"{diff_base}..HEAD"], cwd=clone_dir)
 
     report_path = spec_dir / "PR_SUBMISSION.md"
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    report_content = f"""# Pull Request Submission Report — Track {track} ({meta['pr_id']}, Stage {meta['stage']})
+    report_content = f"""# Pull Request Submission Report — Track {track} ([{meta['tag']}], Stage {meta['stage']})
 
 - **Generated At**: `{now_iso}`
-- **Track**: Track {track} (`{meta['pr_id']}`)
+- **Track**: Track {track} ([`{meta['tag']}`])
 - **Track Branch**: `{meta['branch']}`
 - **Target PR Base Branch**: `{BASE_BRANCH}` (**NEVER** directly to `main`)
 - **HEAD Commit**: `{head_sha}`

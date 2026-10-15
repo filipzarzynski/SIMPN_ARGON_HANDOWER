@@ -1,21 +1,22 @@
-# Pull Request Submission Report — Track F (PR-6, Stage 1)
+# Pull Request Submission Report — Track F ([FZ-F], Stage 1) — Upstream PR #6
 
 - **Generated At**: `2026-10-15T21:11:59Z`
-- **Track**: Track F (`PR-6`)
+- **Track**: Track F (`[FZ-F]`)
 - **Track Branch**: `fz/track-F-submission-and-ui-polish`
 - **Target PR Base Branch**: `fz-contrib` (**NEVER** directly to `main`)
 - **HEAD Commit**: `e36ecbb3cd5217ebf6201adae480f46d7013804d`
 - **Integrated into Local Hub `fz-contrib`**: `YES (Linear / Cherry-Pickable)`
-- **Portable Git Bundle**: `/home/agent/SIMPN_ARGON_HANDOWER/parallel_agents/track_F_submission_and_ui_polish/PR-6_F.bundle`
-- **Remote Push (`fork`)**: `PUSHED`
-- **GitHub PR URL (into `fz-contrib`)**: `Ready to open from fz/track-F-submission-and-ui-polish -> fz-contrib`
+- **Portable Git Bundle**: `/home/agent/SIMPN_ARGON_HANDOWER/parallel_agents/track_F_submission_and_ui_polish/FZ-F.bundle`
+- **Upstream GitHub PR (Szpili/SIMON)**: `https://github.com/Szpili/SIMON/pull/6` (WAITING FOR MERGE)
+- **Fork PR (filipzarzynski/SIMON)**: `https://github.com/filipzarzynski/SIMON/pull/2`
+- **Target Integration Base**: `fz-contrib` / `main`
 
 ---
 
 ## PR Title
 `[FZ-F] fix(ui,docs,tools): reconcile submission test/MI300X tables, clarify UI demo/network badges, and harden Python tools`
 
-## Summary (PR-6 — Track F, Stage 1)
+## Summary (Track F — [FZ-F], Stage 1)
 
 - **Target Integration Branch**: `fz-contrib` *(does **not** touch `main` directly; prepared for Team Captain review / cherry-pick)*
 - **Addresses Audit Findings**: `BUG-10`, `BUG-11`, `BUG-12`, `BUG-13`, `BUG-14`, `BUG-16`

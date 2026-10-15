@@ -8,7 +8,7 @@ description: >-
 
 # SIMON Intelligent Industry & SvelteKit UI Skill (`simon-industry-and-ui`)
 
-Activate this skill when working on **Track C (`PR-3`)** or **Track F (`PR-6`)**.
+Activate this skill when working on **Track C (`[FZ-C]`)** or **Track F (`[FZ-F]`)**.
 
 ## 1. Track 1: Intelligent Industry Pipeline (`tools/simon-industry/`)
 
@@ -16,7 +16,7 @@ Activate this skill when working on **Track C (`PR-3`)** or **Track F (`PR-6`)**
   - Run unit tests: `python3 tools/simon-industry/rules.py` (note: takes NO CLI arguments; runs `selfcheck()` + dataset summary automatically).
 - **Stage 2 (`tickets.py`, `agent_triage.py` & `export_ui.py`)**:
   - Escalates anomalies to **Gemma 4 26B-A4B** on local **RTX 3090** (`gemma-4-26b-a4b-it-qat-q4_0`, `61.8 tok/s`) or **AMD Instinct MI300X** (`gemma-4-26b-a4b-it-bf16`, `199.1 tok/s`).
-  - **Track C Upgrade (`PR-3`)**: Adds `tools/simon-industry/agent_triage.py` (autonomous multi-turn tool-calling triage + M7 `SIMON/GRANT-PARAMS/v1` capability ceiling) and makes `/industry` (`ui/src/routes/industry/+page.svelte`) interactive in the browser with live WASM `verifyReceipt` tamper and M7 grant verification!
+  - **Track C Upgrade (`[FZ-C]`)**: Adds `tools/simon-industry/agent_triage.py` (autonomous multi-turn tool-calling triage + M7 `SIMON/GRANT-PARAMS/v1` capability ceiling) and makes `/industry` (`ui/src/routes/industry/+page.svelte`) interactive in the browser with live WASM `verifyReceipt` tamper and M7 grant verification!
   - See [industry_schema.md](./references/industry_schema.md) for the exact JSON structure of `ui/src/lib/industry-run.json`.
 
 ## 2. SvelteKit 5 UI (`ui/`)

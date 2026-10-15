@@ -1,4 +1,4 @@
-# Agent Task Specification: Track H (Stage 2) — Live Node-to-Agent M1 Integration & E2E Test (`PR-8`)
+# Agent Task Specification: Track H (Stage 2) — Live Node-to-Agent M1 Integration & E2E Test (`[FZ-H]`)
 
 **Stage:** Stage 2 (Run AFTER Stage 1 Tracks A, B, and D are integrated into `fz-contrib`)  
 **Target PR Base Branch:** `fz-contrib` (**NEVER** `main`)  

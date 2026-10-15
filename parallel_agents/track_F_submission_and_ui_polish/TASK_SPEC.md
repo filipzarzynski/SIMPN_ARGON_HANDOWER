@@ -1,6 +1,7 @@
-# Track F — Submission Consistency, UI Tamper/Topology Polish & Python Tool Hardening (`PR-6`)
+# Track F — Submission Consistency, UI Tamper/Topology Polish & Python Tool Hardening (`[FZ-F]` · Upstream PR #6)
 
 **Stage:** Stage 1 (Wave 1A — Urgent)  
+**Live Upstream PR:** **[Szpili/SIMON PR #6](https://github.com/Szpili/SIMON/pull/6)** (Waiting for Merge)  
 **Target PR Base Branch:** `fz-contrib` (**NEVER** `main`)  
 **Dedicated Track Branch:** `fz/track-F-submission-and-ui-polish`  
 **Dedicated Clone Subfolder:** `/home/agent/SIMPN_ARGON_HANDOWER/workspaces/track_F`  

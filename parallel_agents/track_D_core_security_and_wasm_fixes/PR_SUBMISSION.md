@@ -1,21 +1,22 @@
-# Pull Request Submission Report — Track D (PR-4, Stage 1)
+# Pull Request Submission Report — Track D ([FZ-D], Stage 1) — Upstream PR #4
 
 - **Generated At**: `2026-10-15T20:58:26Z`
-- **Track**: Track D (`PR-4`)
+- **Track**: Track D (`[FZ-D]`)
 - **Track Branch**: `fz/track-D-core-security-hardening`
 - **Target PR Base Branch**: `fz-contrib` (**NEVER** directly to `main`)
 - **HEAD Commit**: `3669a8413ee6d5d4b2d4704ef594319e16e6073b`
 - **Integrated into Local Hub `fz-contrib`**: `YES (Linear / Cherry-Pickable)`
-- **Portable Git Bundle**: `/home/agent/SIMPN_ARGON_HANDOWER/parallel_agents/track_D_core_security_and_wasm_fixes/PR-4_D.bundle`
-- **Remote Push (`fork`)**: `PUSHED`
-- **GitHub PR URL (into `fz-contrib`)**: `Ready to open from fz/track-D-core-security-hardening -> fz-contrib`
+- **Portable Git Bundle**: `/home/agent/SIMPN_ARGON_HANDOWER/parallel_agents/track_D_core_security_and_wasm_fixes/FZ-D.bundle`
+- **Upstream GitHub PR (Szpili/SIMON)**: `https://github.com/Szpili/SIMON/pull/4` (WAITING FOR MERGE)
+- **Fork PR (filipzarzynski/SIMON)**: `https://github.com/filipzarzynski/SIMON/pull/1`
+- **Target Integration Base**: `fz-contrib` / `main`
 
 ---
 
 ## PR Title
 `[FZ-D] fix(core,wasm): enforce M0 signature in M1/WASM, block IPv6-mapped SSRF, NaN logprobs, and non-object Cap JSON`
 
-## Summary (PR-4 — Track D, Stage 1)
+## Summary (Track D — [FZ-D], Stage 1)
 
 - **Target Integration Branch**: `fz-contrib` *(does **not** touch `main` directly; prepared for Team Captain review / cherry-pick)*
 - **Addresses Audit Findings**: `BUG-04`, `BUG-06`, `BUG-15`

@@ -1,4 +1,4 @@
-# Agent Task Specification: Track I (Stage 2) — Team Captain Cherry-Pick Menu & Fast Verification Script (`PR-9`)
+# Agent Task Specification: Track I (Stage 2) — Team Captain Cherry-Pick Menu & Fast Verification Script ([FZ-I])
 
 **Stage:** Stage 2 (Run AFTER Stage 1 Tracks A–F are integrated into `fz-contrib`)  
 **Target PR Base Branch:** `fz-contrib` (**NEVER** `main`)  

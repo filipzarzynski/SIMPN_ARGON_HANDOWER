@@ -22,63 +22,63 @@ case "$TRACK" in
         STAGE="1"
         BRANCH="fz/track-A-node-receipt-truth"
         TRACK_DIR_NAME="track_A_receipt_and_node_truth"
-        PR_ID="PR-1"
+        TRACK_TAG="FZ-A"
         ALLOWED_FILES="crates/simon-cli/src/node.rs, crates/simon-cli/src/main.rs"
         ;;
     B)
         STAGE="1"
         BRANCH="fz/track-B-live-m1-receipts"
         TRACK_DIR_NAME="track_B_live_m1_token_binding"
-        PR_ID="PR-2"
-        ALLOWED_FILES="crates/simon-harness/src/request_response.rs, crates/simon-cli/src/wspolne.rs, crates/simon-cli/src/agent.rs"
+        TRACK_TAG="FZ-B"
+        ALLOWED_FILES="crates/simon-harness/src/request_response.rs, crates/simon-cli/src/wspolne.rs, crates/simon-cli/src/agent.rs, crates/simon-cli/src/node.rs"
         ;;
     C)
         STAGE="1"
         BRANCH="fz/track-C-industry-m7-agent"
         TRACK_DIR_NAME="track_C_industry_gemma4_live_agent"
-        PR_ID="PR-3"
+        TRACK_TAG="FZ-C"
         ALLOWED_FILES="tools/simon-industry/**, ui/src/lib/industry-run.json, ui/src/routes/industry/+page.svelte"
         ;;
     D)
         STAGE="1"
         BRANCH="fz/track-D-core-security-hardening"
         TRACK_DIR_NAME="track_D_core_security_and_wasm_fixes"
-        PR_ID="PR-4"
+        TRACK_TAG="FZ-D"
         ALLOWED_FILES="crates/simon-core/src/**, crates/simon-core/tests/**, crates/simon-verify-wasm/src/lib.rs"
         ;;
     E)
         STAGE="1"
         BRANCH="fz/track-E-coordinator-gossipsub-bridge"
         TRACK_DIR_NAME="track_E_p2p_coordinator_bridge"
-        PR_ID="PR-5"
+        TRACK_TAG="FZ-E"
         ALLOWED_FILES="crates/simon-cli/src/coord.rs, crates/simon-cli/src/mapreduce.rs, crates/simon-node/src/lib.rs"
         ;;
     F)
         STAGE="1"
         BRANCH="fz/track-F-submission-and-ui-polish"
         TRACK_DIR_NAME="track_F_submission_and_ui_polish"
-        PR_ID="PR-6"
+        TRACK_TAG="FZ-F"
         ALLOWED_FILES="README.md, docs/zgloszenie/LABLAB-SUBMISSION.md, ui/src/routes/demo/+page.svelte, ui/src/routes/network/+page.svelte, ui/src/lib/components/NodePanel.svelte, tools/simon-api/simon_api.py, tools/simon-verifier/verifier_loop.py, demo/app.py, demo/app.en.py"
         ;;
     G)
         STAGE="2"
         BRANCH="fz/track-G-architecture-and-docs-overhaul"
         TRACK_DIR_NAME="track_G_architecture_and_docs_overhaul"
-        PR_ID="PR-7"
+        TRACK_TAG="FZ-G"
         ALLOWED_FILES="docs/ARCHITECTURE.md, docs/THREAT-MODEL.md, ROADMAP.md, docs/whitepaper/SIMON-whitepaper-EN.md"
         ;;
     H)
         STAGE="2"
         BRANCH="fz/track-H-e2e-integration-and-live-m1-bridge"
         TRACK_DIR_NAME="track_H_e2e_integration_and_live_m1_bridge"
-        PR_ID="PR-8"
+        TRACK_TAG="FZ-H"
         ALLOWED_FILES="crates/simon-cli/src/node.rs, crates/simon-cli/tests/e2e_m1_receipt.rs"
         ;;
     I)
         STAGE="2"
         BRANCH="fz/track-I-captain-cherry-pick-menu-and-ci"
         TRACK_DIR_NAME="track_I_captain_cherry_pick_menu_and_ci"
-        PR_ID="PR-9"
+        TRACK_TAG="FZ-I"
         ALLOWED_FILES="docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md, scripts/verify_all_fast.sh"
         ;;
     *)
@@ -186,9 +186,9 @@ done
 # Link workspace skills into the clone root and generate track-scoped AGENTS.md
 ln -sfn "$HANDOVER_ROOT/.agents" "$CLONE_DIR/.agents"
 cat > "$CLONE_DIR/AGENTS.md" <<EOF
-# Track $TRACK ($PR_ID — Stage $STAGE) Local Clone Rules
+# Track $TRACK ([$TRACK_TAG] — Stage $STAGE) Local Clone Rules
 
-- **Assigned Track**: Track $TRACK ($PR_ID, Stage $STAGE)
+- **Assigned Track**: Track $TRACK ([$TRACK_TAG], Stage $STAGE)
 - **Target PR Base Branch**: \`$BASE_BRANCH\` (**NEVER** PR directly to \`main\`!)
 - **Dedicated Track Branch**: \`$BRANCH\`
 - **Clone Directory**: \`$CLONE_DIR\`
@@ -205,7 +205,7 @@ cat > "$CLONE_DIR/AGENTS.md" <<EOF
 EOF
 
 echo "========================================================================"
-echo " Track $TRACK ($PR_ID — Stage $STAGE) Workspace Initialized Successfully!"
+echo " Track $TRACK ([$TRACK_TAG] — Stage $STAGE) Workspace Initialized Successfully!"
 echo "------------------------------------------------------------------------"
 echo " Clone Directory : $CLONE_DIR"
 echo " Symlink         : $SPEC_DIR/repo"

@@ -1,53 +1,69 @@
-# 05 — Hackathon Roadmap & Feature-Branch / Pull-Request Catalog
+# 05 — Hackathon Roadmap & Canonical Track / Pull-Request Catalog
 
 **Current Date:** 2026-10-15  
 **Hackathon Deadline:** AMD Developer Hackathon: ACT III (Oct 18, 2026)  
-**Goal:** Maximize judging scores across **Track 1 (Intelligent Industry)**, **Google Gemma Prize ($5,000)**, **AMD Prize ($5,000)**, **Vibe Generation Special Prize**, and **Evolus Business Agents Partner Track**, while delivering the unimplemented/unwired core features discovered during the audit.
+**Goal:** Maximize judging scores across **Track 1 (Intelligent Industry)**, **Google Gemma Prize ($5,000)**, **AMD Prize ($5,000)**, **Vibe Generation Special Prize**, and **Evolus Business Agents Partner Track**, while delivering the full cryptographic verification suite, node truthfulness, and P2P coordination layers.
 
 ---
 
-## 1. Strategic Prioritization Matrix
+## 1. Upstream Pull Request Status on `https://github.com/Szpili/SIMON/`
+
+To prevent repository spam and protect `Szpili/SIMON:main`, all tracks branch off **`fz-contrib`**, maintain 100% disjoint file ownership, and use atomic commits prefixed with `[FZ-<Track><N>]` so the Team Captain can either merge `fz-contrib` or cherry-pick individual fixes in seconds.
+
+### Currently Open & Waiting for Merge on Upstream (`Szpili/SIMON`):
+1. **[Upstream PR #4](https://github.com/Szpili/SIMON/pull/4) — Track D (`[FZ-D]`):** `fix(core,wasm): enforce M0 signature in M1/WASM, block IPv6-mapped SSRF, NaN logprobs, and non-object Cap JSON` (from `fz/track-D-core-security-hardening` -> `main`)
+2. **[Upstream PR #5](https://github.com/Szpili/SIMON/pull/5) — Track A (`[FZ-A]`):** `fix(node,cli): populate real timestamps, dynamic precision, and --expect-signer verification` (from `fz/track-A-node-receipt-truth` -> `main`)
+3. **[Upstream PR #6](https://github.com/Szpili/SIMON/pull/6) — Track F (`[FZ-F]`):** `fix(ui,docs,tools): reconcile submission tables, add live signature tamper button, and harden Python tools` (from `fz/track-F-submission-and-ui-polish` -> `main`)
+
+*(Note: Upstream PR #1 is an independent research proposal from Josephsjr96; PR #2 and PR #3 were historical. Track letters `Track A` through `Track I` and commit tags `[FZ-A]` through `[FZ-I]` provide the authoritative, unambiguous cross-file identifiers.)*
+
+---
+
+## 2. Strategic Prioritization & Wave Architecture
 
 ```mermaid
-flowchart LR
-    subgraph Tier0["Tier 0: Urgent Hackathon Fixes (1-2h)"]
-        PR1["PR-1: fix/node-receipt-truth<br/>Real started_at_us, precision,<br/>llama.cpp runtime & /tokenize,<br/>--expect-signer"]
-        PR6["PR-6: fix/submission-and-industry-ui<br/>Fix 1.5s->1.7s doc mismatch,<br/>VerifierPanel M3 non-gating,<br/>Interactive tamper on /industry"]
+flowchart TD
+    Main["Szpili/SIMON: origin/main<br/>(Protected Upstream)"]
+    FZ["fz-contrib<br/>(Shared Staging Base Branch)"]
+    Main --> FZ
+
+    subgraph Wave1A["Stage 1 — Wave 1A: Urgent Bug & Security Fixes (WAITING FOR MERGE UPSTREAM)"]
+        TD["Track D [FZ-D] -> Upstream PR #4<br/>fz/track-D-core-security-hardening<br/>M1/WASM signature check, IPv6 SSRF, NaN M3, 0600 keys"]
+        TA["Track A [FZ-A] -> Upstream PR #5<br/>fz/track-A-node-receipt-truth<br/>started_at_us / finished_at_us, GGUF precision, /props, --expect-signer"]
+        TF["Track F [FZ-F] -> Upstream PR #6<br/>fz/track-F-submission-and-ui-polish<br/>Submission test counts, MI300X tables, Ed25519 tamper button, API auth"]
     end
 
-    subgraph Tier1["Tier 1: High-Impact Hackathon Features (2-4h)"]
-        PR3["PR-3: feat/industry-m7-agent<br/>Wire M7 (cap.rs Sufit + Zezwolenie)<br/>into Intelligent Industry + WASM<br/>+ Multi-step Gemma 4 Tool Agent"]
-        PR2["PR-2: feat/live-m1-receipts<br/>Populate WiazaniaM1 (Proof Level 1)<br/>live in node.rs & agent.rs"]
+    subgraph Wave1B["Stage 1 — Wave 1B: Hackathon Showcase Feature Upgrades (COMPLETED IN FZ-CONTRIB)"]
+        TC["Track C [FZ-C] -> Fork PR #5<br/>fz/track-C-industry-m7-agent<br/>Autonomous Gemma 4 multi-turn triage + M7 Zezwolenie ceiling + UI explorer"]
+        TB["Track B [FZ-B]<br/>fz/track-B-live-m1-receipts<br/>Wire PromptResponse M1 token vectors, wspolne tokenize helper, agent M1 verifier"]
+        TE["Track E [FZ-E]<br/>fz/track-E-coordinator-gossipsub-bridge<br/>Registry mark_degraded, deterministic VRF candidate selection, MapReduce UTF-8 tokens"]
     end
 
-    subgraph Tier2["Tier 2: Core Security & Protocol Delivery (2-4h)"]
-        PR4["PR-4: fix/core-security-hardening<br/>Fix M1 unsigned bug, SSRF IPv6,<br/>M3 NaN, cap.rs non-object,<br/>tozsamosc.rs 0600 TOCTOU"]
-        PR5["PR-5: feat/coordinator-gossipsub-bridge<br/>Fix AcpServer 3 bugs, wire coord.rs<br/>assignment & RegisterMsg signing"]
+    subgraph Stage2["Stage 2 — Architecture, Integration & Captain Delivery (POST-STAGE 1)"]
+        TG["Track G [FZ-G]<br/>fz/track-G-architecture-and-docs-overhaul<br/>Comprehensive docs/ARCHITECTURE.md + Threat Model & Whitepaper sync"]
+        TH["Track H [FZ-H]<br/>fz/track-H-e2e-integration-and-live-m1-bridge<br/>Live node.rs + wspolne.rs M1 token chain binding + e2e_m1_receipt.rs"]
+        TI["Track I [FZ-I]<br/>fz/track-I-captain-cherry-pick-menu-and-ci<br/>docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md + scripts/verify_all_fast.sh"]
     end
 
-    Tier0 --> Tier1 --> Tier2
+    FZ --> Wave1A
+    FZ --> Wave1B
+    Wave1A -->|"Integrated"| FZ
+    Wave1B -->|"Integrated"| FZ
+    FZ --> Stage2
 ```
 
 ---
 
-## 2. Detailed Pull Request (Feature Branch) Catalog
+## 3. Master Track Catalog (Tracks A through I)
 
-Each PR below is scoped to touch **disjoint or cleanly modularized file sets** so that **6 parallel Gemini 3.8 Flash High coding agents** can implement and test them simultaneously in isolated `git worktree` checkouts without merge conflicts.
-
-| PR ID | Branch Name | Priority | Target Files | What It Solves / Delivers |
-| :--- | :--- | :--- | :--- | :--- |
-| **PR-1** | `fix/node-receipt-truth` | **Tier 0 (Urgent)** | `crates/simon-cli/src/node.rs`<br>`crates/simon-cli/src/agent.rs`<br>`crates/simon-cli/src/main.rs` | 1. Captures `started_at_us` *before* inference (`policz`) so `finished_at_us - started_at_us` reflects real execution duration instead of `0 µs`.<br>2. Detects `llama.cpp` runtime via `GET /props` (`"llama.cpp/1"`) instead of `"nieznany/1"`.<br>3. Infers or accepts `--precision` (`bf16`, `fp16`, `fp8`, `fp4`) instead of hardcoding `Precision::Fp16`.<br>4. Fixes `odczytaj_realny_ctx` (`/tokenize`) to support both vLLM (`{"prompt":...}` $\rightarrow$ `{"count":N}`) and `llama-server` (`{"content":...}` $\rightarrow$ `{"tokens":[...]}`).<br>5. Adds optional `--expect-signer <pubkey_hex>` to `agent` and `verify` using `Receipt::verify_for_node`. |
-| **PR-2** | `feat/live-m1-receipts` | **Tier 1 (High Impact)** | `crates/simon-cli/src/node.rs`<br>`crates/simon-cli/src/agent.rs`<br>`crates/simon-harness/src/request_response.rs` | Upgrades `simon --role node` from **Proof Level 0** (`wiazania: None`) to **Proof Level 1 (`WiazaniaM1`)** whenever `/tokenize` is available on the backend: computes `prompt_digest` (`SIMON/PROMPT/v1`), `output_token_chain` (`SIMON/CHAIN/v1`), and `sampling_params_hash` (`SIMON/SAMPLING/v1`), and returns token IDs in `PromptResponse` so `agent.rs` can run `zweryfikuj_m1` live! |
-| **PR-3** | `feat/industry-m7-agent` | **Tier 1 (Hackathon Winner)** | `tools/simon-industry/tickets.py`<br>`tools/simon-industry/agent_triage.py` (new)<br>`crates/simon-verify-wasm/src/lib.rs`<br>`ui/src/routes/industry/+page.svelte` | **Unifies SIMON's M7 capability security (`cap.rs`) with Track 1 (Intelligent Industry) & Evolus Business Agents:**<br>1. Adds multi-step tool-calling agent mode (`agent_triage.py`) where **Gemma 4 26B-A4B** calls read-only diagnostic tools (`get_machine_history`, `check_spare_parts_inventory`, `calculate_physics_margins`) and proposes a maintenance action tool call (`schedule_maintenance_ticket`).<br>2. Exposes `simon_core::cap::waliduj_json` and `Zezwolenie` verification in `simon-verify-wasm` and `simon` CLI.<br>3. Adds interactive **Tamper Test** and **Sign Operator Grant (`Zezwolenie`)** buttons to the `/industry` UI page! |
-| **PR-4** | `fix/core-security-hardening` | **Tier 0/1 (Security)** | `crates/simon-core/src/receipt.rs`<br>`crates/simon-core/src/m3.rs`<br>`crates/simon-core/src/cap.rs`<br>`crates/simon-core/src/web.rs`<br>`crates/simon-core/src/tozsamosc.rs`<br>`crates/simon-core/src/obserwacja.rs`<br>`crates/simon-core/src/protokol.rs`<br>`crates/simon-verify-wasm/src/lib.rs` | Fixes 8 concrete bugs in `simon-core` & `simon-verify-wasm`:<br>1. Calls `self.verify_self()?` inside `Receipt::zweryfikuj_m1` and checks `receipt_level == 1` & token counts.<br>2. Fixes SSRF filter in `web.rs` (`to_canonical()` for IPv4-mapped IPv6, `fc00::/7`, `fe80::/10`, bracketed `[::1]`, leading dot in `host_dozwolony`).<br>3. Fixes `f64::NAN` bypass and unsorted `topk` in `m3::ocena`.<br>4. Fixes `cap::waliduj` non-object JSON bypass and enforces `Zezwolenie::budzet`.<br>5. Fixes `tozsamosc::zaloz` to create temp key file with `mode(0o600)` atomically.<br>6. Fixes `ClientObservationV1::sign` pubkey assignment and `Kubelek::zezwol` monotonic clock guard. |
-| **PR-5** | `feat/coordinator-gossipsub-bridge` | **Tier 2 (Architecture)** | `crates/simon-harness/src/acp_server.rs`<br>`crates/simon-harness/src/client_protocol.rs`<br>`crates/simon-node/src/lib.rs`<br>`crates/simon-cli/src/coord.rs` | Fixes the disconnected coordinator/harness layer:<br>1. Fixes all 3 bugs in `AcpServer` (attaches `Autoryzacja` in `przyjmij`, uses `RejestrKoordynatorow::winner_zrejestrowany` in `obsluz_event`, uses `odcisk_wyjscia` in `zakoncz`).<br>2. Fixes `Autoryzacja::czy_wazna` `saturating_add` overflow.<br>3. Fixes `Registry::kandydaci_dla_modelu` to read `attested` instead of `declared`.<br>4. Updates `coord.rs` to verify `order.order_id_sie_zgadza()`, persist coordinator identity (`--key-file`), and call `rejestr.assign()`. |
-| **PR-6** | `fix/submission-and-ui-polish` | **Tier 0 (Urgent)** | `docs/zgloszenie/LABLAB-SUBMISSION.md`<br>`ui/src/lib/components/VerifierPanel.svelte`<br>`ui/src/routes/industry/+page.svelte` | 1. Fixes `LABLAB-SUBMISSION.md:34` (`median 1.5 s` $\rightarrow$ `median 1.7 s (1.5 s on local RTX 3090, 2.5 s over WAN on AMD MI300X)`).<br>2. Fixes `VerifierPanel.svelte:97` so M3 failure shows `'soft-fail / telemetry warning'` instead of `'rejected'`, matching `FP-RESULT.md` and `m3::decyzja`.<br>3. Adds interactive Tamper & Re-verify controls to `/industry/+page.svelte` so judges can test tampering with a Gemma 4 maintenance ticket directly on `/industry`! |
-
----
-
-## 3. Recommended Execution Order for Hackathon Submission
-
-If time is tight before the Oct 18 deadline, execute in this exact wave order:
-1. **Wave 1 (Immediate — 45 mins):** Run **Agent F (`PR-6`)** and **Agent D (`PR-4`)** in parallel. This eliminates every security hole in `simon-core`/`simon-verify-wasm`, fixes the submission text discrepancy, and makes `/industry` interactive in the browser.
-2. **Wave 2 (High Leverage — 90 mins):** Run **Agent A (`PR-1`)** and **Agent C (`PR-3`)** in parallel. This fixes the node receipt metadata (`started_at_us`, `precision`, `runtime`) and upgrades `simon-industry` with M7 `Zezwolenie` operator grants and multi-step Gemma 4 tool-calling triage.
-3. **Wave 3 (Deep Protocol Delivery — 90 mins):** Run **Agent B (`PR-2`)** and **Agent E (`PR-5`)** to deliver live Level 1 (`WiazaniaM1`) receipts and bridge the Gossipsub Coordinator flow.
+| Track Code | Commit Tag | Dedicated Branch (`fz/track-*`) | Target PR Base | Live Upstream / Remote Status | Exclusive Target Files | What It Solves / Delivers |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Track D** | `[FZ-D]` | `fz/track-D-core-security-hardening` | `fz-contrib` / `main` | **[Upstream PR #4](https://github.com/Szpili/SIMON/pull/4)** | `crates/simon-core/src/**`<br>`crates/simon-core/tests/**`<br>`crates/simon-verify-wasm/src/lib.rs` | Enforces Ed25519 signature inside `Receipt::zweryfikuj_m1` (`BUG-04`), blocks IPv4-mapped IPv6 & ULA SSRF (`BUG-06`), rejects `NaN` logprobs and sorts `topk` in `m3.rs` (`BUG-15`), hardens `cap.rs` non-object JSON and 0600 file creation. |
+| **Track A** | `[FZ-A]` | `fz/track-A-node-receipt-truth` | `fz-contrib` / `main` | **[Upstream PR #5](https://github.com/Szpili/SIMON/pull/5)** | `crates/simon-cli/src/node.rs`<br>`crates/simon-cli/src/main.rs` | Captures real `started_at_us` and `finished_at_us` in live receipts (`BUG-01`), infers dynamic `Precision` from model name (`BUG-02`), detects `llama.cpp` runtime via `/props`, supports `llama-server` `/tokenize`, and adds `--expect-signer` offline check. |
+| **Track F** | `[FZ-F]` | `fz/track-F-submission-and-ui-polish` | `fz-contrib` / `main` | **[Upstream PR #6](https://github.com/Szpili/SIMON/pull/6)** | `README.md`<br>`docs/zgloszenie/LABLAB-SUBMISSION.md`<br>`ui/src/routes/demo/+page.svelte`<br>`ui/src/routes/network/+page.svelte`<br>`ui/src/lib/components/NodePanel.svelte`<br>`tools/simon-api/simon_api.py`<br>`tools/simon-verifier/verifier_loop.py`<br>`demo/app.py`, `demo/app.en.py` | Aligns test counts (187 Rust + 24 Python = 211) and completed MI300X tables (`BUG-16`), adds live Ed25519 signature tamper button to `/demo` (`BUG-14`), adds simulated topology badge to `/network` (`BUG-13`), hardens `simon_api.py` with M1 `proof_level` & optional `SIMON_API_KEY` auth (`BUG-10`). |
+| **Track C** | `[FZ-C]` | `fz/track-C-industry-m7-agent` | `fz-contrib` | **Fork PR #5** (Integrated in `fz-contrib`) | `tools/simon-industry/**`<br>`ui/src/lib/industry-run.json`<br>`ui/src/routes/industry/+page.svelte` | Implements `agent_triage.py` autonomous multi-turn Gemma 4 26B-A4B tool-calling agent with strict M7 capability ceiling (`SIMON/GRANT-PARAMS/v1`) (`BUG-09`), and adds interactive WASM tamper & M7 `Zezwolenie` operator grant explorer to `/industry`. |
+| **Track B** | `[FZ-B]` | `fz/track-B-live-m1-receipts` | `fz-contrib` | **Integrated in `fz-contrib`** | `crates/simon-harness/src/request_response.rs`<br>`crates/simon-cli/src/wspolne.rs`<br>`crates/simon-cli/src/agent.rs`<br>`crates/simon-cli/src/node.rs` (3-line init) | Adds optional `tokenizer_hash`, `prompt_token_ids`, and `output_token_ids` to `PromptResponse` (`BUG-03`), implements `wspolne::tokenizuj_tekst` and default tokenizer hash helper, and automatically runs `zweryfikuj_m1` in `simon agent`. |
+| **Track E** | `[FZ-E]` | `fz/track-E-coordinator-gossipsub-bridge` | `fz-contrib` | **Integrated in `fz-contrib`** | `crates/simon-node/src/lib.rs`<br>`crates/simon-cli/src/coord.rs`<br>`crates/simon-cli/src/mapreduce.rs` | Adds `mark_degraded`, `active_assignments`, and deterministic VRF candidate selection to `Registry` (`BUG-07`), wires `TOPIC_JOB_RESULT` and real VRF seed in `coord.rs`, and fixes `mapreduce.rs` UTF-8 token budgeting (`BUG-08`). |
+| **Track G** | `[FZ-G]` | `fz/track-G-architecture-and-docs-overhaul` | `fz-contrib` | Stage 2 (Post-Stage 1) | `docs/ARCHITECTURE.md`<br>`docs/THREAT-MODEL.md`<br>`ROADMAP.md`<br>`docs/whitepaper/SIMON-whitepaper-EN.md` | Authoritative Mermaid system architecture, data flows, and verification hierarchy documentation; aligns threat model with verifiable receipts vs active canary probing. |
+| **Track H** | `[FZ-H]` | `fz/track-H-e2e-integration-and-live-m1-bridge` | `fz-contrib` | Stage 2 (Post-Stage 1) | `crates/simon-cli/src/node.rs`<br>`crates/simon-cli/tests/e2e_m1_receipt.rs` | Bridges `node.rs` to `wspolne::tokenizuj_tekst` and populates `Receipt::z_wiazaniem_m1` live when backend supports `/tokenize`; adds comprehensive end-to-end integration test. |
+| **Track I** | `[FZ-I]` | `fz/track-I-captain-cherry-pick-menu-and-ci` | `fz-contrib` | Stage 2 (Post-Stage 1) | `docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md`<br>`scripts/verify_all_fast.sh` | Team Captain cherry-pick menu categorizing every atomic commit for 10-second cherry-picking; single-command fast verification runner. |

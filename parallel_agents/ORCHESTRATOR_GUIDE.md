@@ -19,16 +19,16 @@ flowchart TD
     FZ["fz-contrib<br/>(Shared Staging & PR Base Branch)"]
     Main --> FZ
 
-    subgraph Wave1A["Stage 1 — Wave 1A: Urgent Bug & Security Fixes (Highest Cherry-Pick Priority)"]
-        TD["Track D: fz/track-D-core-security-hardening<br/>[FZ-D1..D4] Unsigned M1/WASM, IPv6 SSRF, NaN M3"]
-        TA["Track A: fz/track-A-node-receipt-truth<br/>[FZ-A1..A3] Real timestamp_us, GGUF precision & SHA-256"]
-        TF["Track F: fz/track-F-submission-and-ui-polish<br/>[FZ-F1..F4] Submission doc fixes, UI badges, Python safety"]
+    subgraph Wave1A["Stage 1 — Wave 1A: Urgent Bug & Security Fixes (WAITING FOR MERGE UPSTREAM)"]
+        TD["Track D: [FZ-D] -> Upstream PR #4<br/>fz/track-D-core-security-hardening<br/>[FZ-D1..D4] Unsigned M1/WASM, IPv6 SSRF, NaN M3"]
+        TA["Track A: [FZ-A] -> Upstream PR #5<br/>fz/track-A-node-receipt-truth<br/>[FZ-A1..A4] Real timestamp_us, GGUF precision, --expect-signer"]
+        TF["Track F: [FZ-F] -> Upstream PR #6<br/>fz/track-F-submission-and-ui-polish<br/>[FZ-F1..F3] Submission doc fixes, UI badges, Python safety"]
     end
 
-    subgraph Wave1B["Stage 1 — Wave 1B: Hackathon Showcase Feature Upgrades"]
-        TC["Track C: fz/track-C-industry-m7-agent<br/>[FZ-C1..C3] Multi-turn Gemma 4 tool-calling industry tickets"]
-        TB["Track B: fz/track-B-live-m1-receipts<br/>[FZ-B1..B2] Live M1 TokenCommitment verification in agent"]
-        TE["Track E: fz/track-E-coordinator-gossipsub-bridge<br/>[FZ-E1..E2] MapReduce truncation fix & SimonNode HTTP bridge"]
+    subgraph Wave1B["Stage 1 — Wave 1B: Hackathon Showcase Feature Upgrades (COMPLETED IN FZ-CONTRIB)"]
+        TC["Track C: [FZ-C] -> Fork PR #5<br/>fz/track-C-industry-m7-agent<br/>[FZ-C1..C2] Multi-turn Gemma 4 tool triage + M7 Zezwolenie"]
+        TB["Track B: [FZ-B]<br/>fz/track-B-live-m1-receipts<br/>[FZ-B1..B3] Live M1 TokenCommitment verification in agent"]
+        TE["Track E: [FZ-E]<br/>fz/track-E-coordinator-gossipsub-bridge<br/>[FZ-E1..E3] Registry mark_degraded, VRF selection, MapReduce"]
     end
 
     subgraph Stage2["Stage 2 — Follow-Up Overhaul (Run AFTER Stage 1 is in fz-contrib)"]
