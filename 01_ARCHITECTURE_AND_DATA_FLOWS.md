@@ -1,6 +1,6 @@
 # 01 — Architecture Overview & Data Flows
 
-This document maps the **actual implemented architecture** of SIMON (`https://github.com/Szpili/SIMON`, baseline `1d71e6d` after Stage 1 merge & Captain review) as verified directly from the source code, separating what runs live in production from what exists as offline verifiers, Gossipsub coordination, or Stage 2/3 queued work (for the Stage 2/3 wave-annotated team brief, see [`08_TEAM_SYNC_ARCHITECTURE_AND_WAVE_BRIEF.md`](./08_TEAM_SYNC_ARCHITECTURE_AND_WAVE_BRIEF.md)).
+This document maps the **actual implemented architecture** of SIMON (`https://github.com/Szpili/SIMON`, baseline `82baa8e` after Stage 1 and Stage 2 merges — [Szpili/SIMON#9](https://github.com/Szpili/SIMON/pull/9)) as verified directly from the source code, separating what runs live in production from what exists as offline verifiers, Gossipsub coordination, or Stage 3 queued work (for the Stage 2/3 wave-annotated team brief, see [`08_TEAM_SYNC_ARCHITECTURE_AND_WAVE_BRIEF.md`](./08_TEAM_SYNC_ARCHITECTURE_AND_WAVE_BRIEF.md)).
 
 ---
 
@@ -27,7 +27,7 @@ flowchart TB
     subgraph Rust_Workspace["Rust Workspace (crates/)"]
         CLI["crates/simon-cli (bin: simon) - Roles: agent, node, coord | Subcommands: verify, audyt, guard"]
         Harness["crates/simon-harness - request_response, client_protocol, acp_server, transport"]
-        NodeReg["crates/simon-node - In-memory Registry, VRF candidate selection & Capability"]
+        NodeReg["crates/simon-node - In-memory Registry, VRF candidate selection, SignedJobResult & Registration"]
         Core["crates/simon-core - crypto, receipt, m3, cap, przeplyw, limity, web, obserwacja, rejestr, tozsamosc"]
     end
 
@@ -75,14 +75,14 @@ sequenceDiagram
     Node->>LLM: Startup /props & /v1/models probe + POST /tokenize (Context gate C+1: ctx <= b.max_ctx)
     Node->>LLM: POST /v1/chat/completions (messages, tools, temp, max_tokens - no logprobs)
     LLM-->>Node: HTTP 200 JSON (choices[0].message, usage)
-    Note over Node: zbuduj_podpisany_receipt: output_digest = SHA256(SIMON/OUTPUT/v1), real started/finished_at_us, whole-token Precision (or Unknown), wiazania = None (Level 0 - wired in Stage 2 Track H), Ed25519 sign
-    Node-->>Agent: PromptReply::Ok(PromptResponse { output, receipt, ... })
+    Note over Node: Stage 2 Track H: Tokenizes prompt and output via /tokenize, builds WiazaniaM1 (Level 1) with MAX_M1_TOKENS = 65_536 caps, sets real timestamps and whole-token Precision, signs with Ed25519
+    Node-->>Agent: PromptReply::Ok(PromptResponse { output, receipt, tokenizer_hash, prompt_token_ids, output_token_ids })
     Note over Agent: zweryfikuj_receipt: r.verify_self() + podpisal_oczekiwany(--expect-signer) + r.job_id & r.model_hash + r.zgodny_z_wyjsciem(output) + zweryfikuj_m1(order.nonce) yields poziom_sprawdzony
     Agent-->>Py: Prints JSON line to stdout (receipt_zweryfikowany: true, poziom_dowodu, signer_pinned)
 ```
 
 ### Flow B: The Gossipsub + Coordinator Flow (`acp_server.rs` & `coord.rs`)
-Exists in `crates/simon-harness/src/client_protocol.rs`, `acp_server.rs`, and `crates/simon-cli/src/coord.rs`. Stage 1 (`Track E` + Captain commit `c1f8ef9`) wired `wybierz_kandydata_vrf`, `assign`, `complete_job`, and `TOPIC_JOB_RESULT` handling in `coord.rs`, while `JobResult` signing and `RegisterMsg` signing/vouching are queued for Stage 2 (`Track J`):
+Exists in `crates/simon-harness/src/client_protocol.rs`, `acp_server.rs`, and `crates/simon-cli/src/coord.rs`. Stage 1 wired `wybierz_kandydata_vrf`, `assign`, `complete_job`, and `TOPIC_JOB_RESULT` handling in `coord.rs`. Stage 2 (`Track J`) completed `JobResult` signing (`SIMON/JOB-RESULT/v1`, for both successes and failures), `RegisterMsg` signing (`SIMON/NODE-REGISTER/v1`), and operator vouching (`SIMON/NODE-VOUCH/v1`):
 
 ```mermaid
 sequenceDiagram
@@ -92,16 +92,16 @@ sequenceDiagram
     participant Coord as simon --role coord (coord.rs)
     participant Node as simon --role node (node.rs)
 
-    Node->>Gossip: At startup + every 30s: Publish unsigned RegisterMsg to simon/v1/node-register
-    Note over Node,Coord: Stage 1 limit: RegisterMsg is unsigned (Stage 2 Track J adds SIMON/NODE-REGISTER/v1 + NodeVoucher)
-    Gossip->>Coord: Receives RegisterMsg -> rejestr.register(msg)
+    Node->>Gossip: At startup + every 30s: Publish signed RegisterMsg to simon/v1/node-register
+    Note over Node,Coord: Stage 2 Track J: RegisterMsg signed under SIMON/NODE-REGISTER/v1 with proof-of-possession + optional NodeVoucher
+    Gossip->>Coord: Receives RegisterMsg -> rejestr.register_verified(msg, trusted_voucher)
     ACP->>Gossip: Publish JobOrder to simon/v1/job-order
     Gossip->>Coord: Receives JobOrder -> obsluz_zlecenie (coord.rs)
     Note over Coord: Verifies order.zweryfikuj_autoryzacje(teraz), selects node via wybierz_kandydata_vrf(model, vrf_seed), calls rejestr.assign(job_id, node_id), and signs OrderAccepted
     Coord->>Gossip: Publish OrderAccepted to simon/v1/order-accepted
-    Node->>Gossip: Publish JobResult to simon/v1/job-result after execution
-    Gossip->>Coord: Receives JobResult -> obsluz_wynik (coord.rs)
-    Note over Coord: Verifies assigned_node == Some(node_id), marks degraded + complete_job on failure, or verifies Receipt & complete_job on ok=true (Stage 2 Track J signs JobResult failures too)
+    Node->>Gossip: Publish SignedJobResult to simon/v1/job-result after execution
+    Gossip->>Coord: Receives SignedJobResult -> obsluz_wynik (coord.rs)
+    Note over Coord: Stage 2 Track J: Verifies SignedJobResult with assigned node key (for both ok=true and ok=false), rejects spoofed degradation, and completes job
 ```
 
 ---
@@ -120,7 +120,7 @@ flowchart LR
         RecDig -->|"Ed25519 sign(digest.as_bytes())"| Sig["Receipt.signature + --expect-signer key pinning"]
     end
 
-    subgraph Level1["Proof Level 1 — WiazaniaM1 (Verified in Core/WASM; Live Node Wiring in Stage 2 Track H)"]
+    subgraph Level1["Proof Level 1 — WiazaniaM1 (Live in node.rs via Track H)"]
         TokBytes["tokenizer.json bytes"] -->|"SHA256(SIMON/TOKENIZER/v1 + 0x00 + bytes)"| TokHash["tokenizer_hash"]
         TokHash & Nonce["client_nonce (from order.nonce)"] & PIds["prompt_token_ids: &[u32]"] -->|"DOMENA: SIMON/PROMPT/v1"| PDig["prompt_digest"]
         PDig & OIds["output_token_ids: &[u32]"] -->|"DOMENA: SIMON/CHAIN/v1"| Chain["output_token_chain"]

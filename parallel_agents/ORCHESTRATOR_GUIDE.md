@@ -4,17 +4,12 @@ This repository is pre-configured as the **shared main Antigravity workspace** f
 
 ---
 
-## 0. Post-Mortem Lesson from Stage 1 (Why Stage 2 & Stage 3 Are Built Differently)
+## 0. Current Status & Baseline: Stage 2 Completed in PR #9, Stage 3 Ready to Run
 
-When the Team Captain (`Szpili`) and his Claude Opus 5.5 agent reviewed and merged Stage 1 (`fz-contrib` $\rightarrow$ `main` in PR #8 `d108364`, plus 5 follow-up commits on `fz-contrib` through `53854d2`), they made **22 corrective commits** documented in [`07_STAGE1_CAPTAIN_REVIEW_POSTMORTEM.md`](../07_STAGE1_CAPTAIN_REVIEW_POSTMORTEM.md).
-
-We have baked all 7 lessons from those 22 commits directly into:
-1. **[`.agents/skills/simon-captain-review-guardrails/SKILL.md`](../.agents/skills/simon-captain-review-guardrails/SKILL.md)** (mandatory reading for every agent).
-2. **[`.agents/skills/simon-verify-suite/scripts/verify_track.sh`](../.agents/skills/simon-verify-suite/scripts/verify_track.sh)** (automated Pass 2 blocks workspace path leaks, banned overclaims, fake signatures, and runs `cargo clippy --all-targets -- -D warnings` + all Python `.selfcheck()` suites).
-3. **100% alignment with the Captain's explicit `## Next` list in [`docs/STRESS-TESTS.md`](file:///home/agent/SIMON/docs/STRESS-TESTS.md)**:
-   - `Next #1` (Sign `JobResult` including failures) + `Next #3` (Signed node registration & vouching + Sybil tests) $\rightarrow$ **Stage 2, Wave 2A (`Track J`)**
-   - `Next #2` (Wire live M1 token chain with `MAX_M1_TOKENS = 65_536` caps) $\rightarrow$ **Stage 2, Wave 2A (`Track H`)**
-   - `Next #4` (Prepared VPN target network attack harness reporting against `docs/STRESS-TESTS.md`) $\rightarrow$ **Stage 3, Wave 3A (`Track K`)**
+* **Base Branch:** `fz-contrib` at **`82baa8e`** (includes all Stage 1 + Stage 2 commits).
+* **Upstream Stage 2 PR:** [Szpili/SIMON#9](https://github.com/Szpili/SIMON/pull/9) (`fz-contrib` $\rightarrow$ `main`, 12 commits, mergeable, zero conflicts).
+* **Fast Verification Command:** `bash scripts/verify_all_fast.sh` (passes all 6 suites in ~35s).
+* **Next Active Wave:** **Stage 3 (Waves 3A & 3B: Tracks K, L, M, N)** running off `82baa8e` on `fz-contrib`.
 
 ---
 
@@ -22,83 +17,48 @@ We have baked all 7 lessons from those 22 commits directly into:
 
 ```mermaid
 flowchart TD
-    Main["Szpili/SIMON: upstream/main (5854038) + upstream/fz-contrib (53854d2)"]
-    FZ["fz-contrib (1d71e6d) — Shared Staging & PR Base Branch (NEVER PR to main)"]
+    Main["Szpili/SIMON: upstream/main (5854038) + upstream/fz-contrib (4186b4d)"]
+    FZ["fz-contrib (82baa8e) — Shared Staging & PR Base Branch (NEVER PR to main)"]
     Main --> FZ
 
-    subgraph Wave2A["Stage 2 — Wave 2A: Urgent Protocol & Security Closing (Run First in Parallel)"]
-        TH["Track H [FZ-H] (fz/track-H-e2e-integration-and-live-m1-bridge): STRESS-TESTS Next #2 — Live M1 token binding + MAX_M1_TOKENS cap + E2E test"]
-        TJ["Track J [FZ-J] (fz/track-J-signed-job-result-and-registration): STRESS-TESTS Next #1 & #3 — SignedJobResult + RegisterMsg + NodeVoucher + Sybil test"]
+    subgraph Wave2["Stage 2 — COMPLETED (Awaiting Captain Review in Upstream PR #9)"]
+        TH["Track H [FZ-H]: Live M1 token chain + MAX_M1_TOKENS cap + E2E test (MERGED)"]
+        TJ["Track J [FZ-J]: SignedJobResult + RegisterMsg + NodeVoucher + Sybil test (MERGED)"]
+        TG["Track G [FZ-G]: docs/ARCHITECTURE.md + STRESS-TESTS.md rows 7/17/18 + claim boundary docs (MERGED)"]
+        TI["Track I [FZ-I]: scripts/verify_all_fast.sh + docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md (MERGED)"]
     end
 
-    subgraph Wave2B["Stage 2 — Wave 2B: Architecture, Stress-Test Matrix & Captain Fast-Gate (Run Second in Parallel)"]
-        TG["Track G [FZ-G] (fz/track-G-architecture-and-docs-overhaul): docs/ARCHITECTURE.md + STRESS-TESTS.md rows 7/17/18 + THREAT-MODEL.md"]
-        TI["Track I [FZ-I] (fz/track-I-captain-cherry-pick-menu-and-ci): scripts/verify_all_fast.sh + docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md"]
-    end
-
-    subgraph Wave3A["Stage 3 — Wave 3A: Adversarial VPN Target Network & Gateway Hardening (If Time Permits)"]
+    subgraph Wave3A["Stage 3 — Wave 3A: Adversarial VPN Target Network & Gateway Hardening (Run First in Parallel)"]
         TK["Track K [FZ-K] (fz/track-K-vpn-attack-harness-and-agent-m1-gate): STRESS-TESTS Next #4 — vpn_attack_harness.rs + agent.rs M1 missing-token gate"]
         TL["Track L [FZ-L] (fz/track-L-gateway-and-monitor-hardening): simon_api.py 1 MiB cap + signer_pinned log + simon_monitor.py bounded stats"]
     end
 
-    subgraph Wave3B["Stage 3 — Wave 3B: Industry 25-Case Stress Corpus & UI /receipts + /demo Polish (If Time Permits)"]
+    subgraph Wave3B["Stage 3 — Wave 3B: Industry 25-Case Stress Corpus & UI /receipts + /demo Polish (Run Second in Parallel)"]
         TM["Track M [FZ-M] (fz/track-M-industry-adversarial-corpus): tickets.py NFKC/Cf parity + agent_triage.py link/role guards + 25-case corpus"]
         TN["Track N [FZ-N] (fz/track-N-ui-receipts-and-demo-polish): /receipts claim-label table + /demo client-nonce replay tamper & aria-pressed"]
     end
 
-    FZ --> Wave2A
-    Wave2A -->|"Linear cherry-pick into fz-contrib"| FZ
-    FZ --> Wave2B
-    Wave2B -->|"Linear cherry-pick into fz-contrib"| FZ
-    FZ --> Wave3A
+    FZ --> Wave2
+    Wave2 --> Wave3A
     Wave3A -->|"Linear cherry-pick into fz-contrib"| FZ
     FZ --> Wave3B
     Wave3B -->|"Linear cherry-pick into fz-contrib"| FZ
 ```
 
-### Recommended Wave Execution Order
-1. **Stage 2 — Wave 2A (`Tracks H & J` in parallel — ~15 mins)**:
-   - Closes the Captain's top 3 `docs/STRESS-TESTS.md` `## Next` items (`#1` Signed `JobResult`, `#2` Live M1 with `MAX_M1_TOKENS`, `#3` Signed `RegisterMsg` + `NodeVoucher` + Sybil tests).
-2. **Stage 2 — Wave 2B (`Tracks G & I` in parallel — ~10 mins)**:
-   - Updates `docs/STRESS-TESTS.md` rows 7/17/18, creates `docs/ARCHITECTURE.md`, adds `scripts/verify_all_fast.sh`, and generates `docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md` for the Captain.
-   - *(Note: All 4 Stage 2 tracks `H, J, G, I` have 100% disjoint file scopes, so if you want to run all 4 simultaneously, they will never conflict! Running `2A` then `2B` simply lets Track I include the exact commit SHAs of `H` and `J` in `FZ-CONTRIB-CHERRY-PICK-GUIDE.md`.)*
-3. **Stage 3 — Wave 3A (`Tracks K & L` in parallel — ~15 mins, if time permits)**:
+### Wave Execution Order for Stage 3
+1. **Stage 3 — Wave 3A (`Tracks K & L` in parallel — ~15 mins)**:
    - Delivers `docs/STRESS-TESTS.md` `Next #4` (`crates/simon-cli/tests/vpn_attack_harness.rs`), closes the `agent.rs` M1 missing-token downgrade gap, and hardens `simon_api.py` + `simon_monitor.py`.
-4. **Stage 3 — Wave 3B (`Tracks M & N` in parallel — ~15 mins, if time permits)**:
+2. **Stage 3 — Wave 3B (`Tracks M & N` in parallel — ~15 mins)**:
    - Unifies NFKC/`Cf` and link/role/urgency checks across `tickets.py` and `agent_triage.py`, expands `stress_corpus.json` from 17 to 25 cases, and polishes `/receipts` + `/demo`.
-   - *(All 4 Stage 3 tracks `K, L, M, N` also have 100% disjoint file scopes!)*
+   - *(All 4 Stage 3 tracks `K, L, M, N` have 100% disjoint file scopes and can also be launched simultaneously if desired!)*
 
 ---
 
-## 2. Ready-to-Paste Prompts for Antigravity Agents (Stage 2 & Stage 3)
+## 2. Ready-to-Paste Prompts for Antigravity Agents (Stage 3 Active Wave)
 
-Open `/home/agent/SIMPN_ARGON_HANDOWER` as the workspace in Antigravity and paste the prompt for any track:
+Open `/home/agent/SIMPN_ARGON_HANDOWER` as the workspace in Antigravity and paste the prompt for any Stage 3 track:
 
-### Stage 2 — Wave 2A Prompts (Launch Together in Parallel)
-
-- **Track H (Live M1 Token Chain Bridge + `MAX_M1_TOKENS` Cap + E2E Test)**:
-  ```text
-  you are track H agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
-  ```
-- **Track J (Signed `JobResult` + Signed `RegisterMsg` & Operator Vouching + Sybil Tests)**:
-  ```text
-  you are track J agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
-  ```
-
-### Stage 2 — Wave 2B Prompts (Launch Together After Wave 2A, or in Parallel with 2A)
-
-- **Track G (Architecture Diagrams & `STRESS-TESTS.md` Rows 7/17/18 Alignment)**:
-  ```text
-  you are track G agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
-  ```
-- **Track I (Captain Fast Verification Script `verify_all_fast.sh` & Cherry-Pick Guide)**:
-  ```text
-  you are track I agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
-  ```
-
----
-
-### Stage 3 — Wave 3A Prompts (Launch Together After Stage 2)
+### Stage 3 — Wave 3A Prompts (Launch Together in Parallel)
 
 - **Track K (`STRESS-TESTS.md` Next #4 VPN Attack Harness & Agent M1 Gate)**:
   ```text
@@ -119,3 +79,13 @@ Open `/home/agent/SIMPN_ARGON_HANDOWER` as the workspace in Antigravity and past
   ```text
   you are track N agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
   ```
+
+---
+
+## 3. Reference: Stage 2 Completed Deliverables (`Tracks H, J, G, I`)
+
+All Stage 2 tracks completed cleanly and are integrated on `fz-contrib` (`82baa8e`):
+* **Track H:** `crates/simon-cli/src/wspolne.rs`, `crates/simon-cli/src/node.rs`, `crates/simon-cli/tests/e2e_m1_receipt.rs`
+* **Track J:** `crates/simon-node/src/lib.rs`, `crates/simon-cli/src/coord.rs`
+* **Track G:** `docs/ARCHITECTURE.md`, `docs/STRESS-TESTS.md`, `docs/THREAT-MODEL.md`, `ROADMAP.md`
+* **Track I:** `scripts/verify_all_fast.sh`, `docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md`

@@ -15,7 +15,7 @@ Activate this skill as **Step 1** whenever you are assigned as a **Track A..N** 
 ## Branch Strategy (`fz-contrib` Integration Base — Never PR Directly to `main`)
 
 To avoid spamming the Team Captain or polluting `main` on `Szpili/SIMON`:
-1. All contributions target the dedicated **`fz-contrib`** branch (synced with `upstream/main` + `upstream/fz-contrib` at `1d71e6d`).
+1. All contributions target the dedicated **`fz-contrib`** branch (synced with `upstream/main` + `upstream/fz-contrib` at `82baa8e`).
 2. Each Track works on its own branch `fz/track-<X>-<slug>` branched off `fz-contrib`.
 3. Every commit on `fz/track-<X>-<slug>` MUST be **self-contained, non-breaking, and individually cherry-pickable** with prefix `[FZ-<X><N>]` (e.g., `[FZ-H1] feat(cli): ...`).
 4. Pull Requests from Track agents target **`fz-contrib`** (never `main`). Once reviewed, the Team Captain can either merge `fz-contrib` into `main` or cherry-pick individual `[FZ-*]` commits.

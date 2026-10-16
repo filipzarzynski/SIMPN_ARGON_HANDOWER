@@ -7,7 +7,7 @@ You are an autonomous Antigravity coding agent operating inside **`SIMPN_ARGON_H
 ## 0. Golden Rules: Target `fz-contrib` (NEVER `main`), Keep Commits Cherry-Pickable & Obey Captain Guardrails
 
 To protect the upstream `Szpili/SIMON` `main` branch and eliminate the **Team Captain review bottleneck**:
-1. **Dedicated Base Branch (`fz-contrib`)**: Every Track agent branches off **`fz-contrib`** (`1d71e6d`, synced with `upstream/main` + `upstream/fz-contrib`) into `fz/track-<X>-<slug>` and targets **`fz-contrib`** (NEVER `main`) when creating a Pull Request.
+1. **Dedicated Base Branch (`fz-contrib`)**: Every Track agent branches off **`fz-contrib`** (`82baa8e`, synced with `upstream/fz-contrib` and `upstream/main`) into `fz/track-<X>-<slug>` and targets **`fz-contrib`** (NEVER `main`) when creating a Pull Request.
 2. **Self-Contained, Cherry-Pickable Commits (`[FZ-<X><N>]`)**: Prefix every commit message with `[FZ-<X>1]`, `[FZ-<X>2]`, etc. (e.g., `[FZ-H1] feat(cli): wire live M1 token chain with MAX_M1_TOKENS cap`). Every single commit MUST compile and pass tests (`cargo clippy --workspace --all-targets -- -D warnings`) independently so the Team Captain can cherry-pick individual fixes onto `main` in seconds.
 3. **Read [`.agents/skills/simon-captain-review-guardrails/SKILL.md`](./.agents/skills/simon-captain-review-guardrails/SKILL.md) BEFORE Writing Any Code**:
    - **Never guess signed claims:** Unknown precision $\rightarrow$ `Precision::Unknown`; `proof_level` $\rightarrow$ `poziom_sprawdzony`; `client_nonce` $\rightarrow$ `order.nonce` (never `receipt.wiazania.client_nonce`).
@@ -20,7 +20,7 @@ To protect the upstream `Szpili/SIMON` `main` branch and eliminate the **Team Ca
 
 When prompted with `"you are track <X> agent..."`, locate your assigned row below and obey its **Subfolder**, **Branch**, **Task Spec**, and **Exclusive File Scope**:
 
-### Stage 1 Tracks (Completed & Merged into `upstream/main` via PR #8 + Post-Merge Refinements in `1d71e6d`)
+### Stage 1 Tracks (Completed & Merged into `upstream/main` via PR #8 + Post-Merge Refinements in `4186b4d`)
 
 | Track | Wave | Commit Tag | Dedicated Clone Subfolder | Dedicated Track Branch (`-> fz-contrib`) | Upstream Status | Post-Mortem & Task Specification |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -33,9 +33,9 @@ When prompted with `"you are track <X> agent..."`, locate your assigned row belo
 
 ---
 
-### Stage 2 Tracks (Split into Waves 2A & 2B — Addressing `docs/STRESS-TESTS.md` Next #1, #2, #3 + Docs & Fast CI Gate)
+### Stage 2 Tracks (Completed & Integrated in Upstream PR #9 [82baa8e] — All 4 Tracks G, H, I, J)
 
-All 4 Stage 2 tracks (`H`, `J`, `G`, `I`) have **100% disjoint file scopes** and can run in two priority waves (`Wave 2A: [H, J]` $\rightarrow$ `Wave 2B: [G, I]`) or all 4 in parallel:
+All 4 Stage 2 tracks (`H`, `J`, `G`, `I`) were completed cleanly with 100% disjoint file scopes, passed all verification suites, and are integrated into `fz-contrib` (`82baa8e`) awaiting Captain review in [Szpili/SIMON#9](https://github.com/Szpili/SIMON/pull/9):
 
 | Track | Wave | Commit Tag | Dedicated Clone Subfolder | Dedicated Track Branch (`-> fz-contrib`) | Roadmap Target (`docs/STRESS-TESTS.md`) | Task Specification | Exclusive File Ownership |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -46,9 +46,9 @@ All 4 Stage 2 tracks (`H`, `J`, `G`, `I`) have **100% disjoint file scopes** and
 
 ---
 
-### Stage 3 Tracks (Split into Waves 3A & 3B — Addressing `docs/STRESS-TESTS.md` Next #4, Gateway/Monitor Hardening, 25-Case Industry Corpus & UI `/receipts` + `/demo` Polish)
+### Stage 3 Tracks (Split into Waves 3A & 3B — Ready to Run off `82baa8e`)
 
-Run AFTER Stage 2 tracks (`H, J, G, I`) are integrated into `fz-contrib`. All 4 Stage 3 tracks (`K`, `L`, `M`, `N`) have **100% disjoint file scopes**:
+Run off **`82baa8e` on `fz-contrib`**. All 4 Stage 3 tracks (`K`, `L`, `M`, `N`) have **100% disjoint file scopes**:
 
 | Track | Wave | Commit Tag | Dedicated Clone Subfolder | Dedicated Track Branch (`-> fz-contrib`) | Roadmap Target (`docs/STRESS-TESTS.md`) | Task Specification | Exclusive File Ownership |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -69,7 +69,7 @@ Every Track agent MUST execute these 5 phases in order:
    bash .agents/skills/simon-track-init/scripts/init_track.sh <TRACK_LETTER>
    ```
    *(where `<TRACK_LETTER>` is `G`..`N`).*
-2. This initializes `workspaces/_upstream_hub.git` with the shared `fz-contrib` base branch (`1d71e6d`), clones `https://github.com/Szpili/SIMON.git` into `workspaces/track_<X>`, and checks out `fz/track-<X>-...` off `fz-contrib`.
+2. This initializes `workspaces/_upstream_hub.git` with the shared `fz-contrib` base branch (`82baa8e`), clones `https://github.com/Szpili/SIMON.git` into `workspaces/track_<X>`, and checks out `fz/track-<X>-...` off `fz-contrib`.
 
 ### Phase 2: Read Captain Guardrails, Your Task Spec & Target Files
 1. **MANDATORY FIRST READ:** Read [`.agents/skills/simon-captain-review-guardrails/SKILL.md`](./.agents/skills/simon-captain-review-guardrails/SKILL.md), [`parallel_agents/AGENT_RULES_COMMON.md`](./parallel_agents/AGENT_RULES_COMMON.md), and your assigned `TASK_SPEC.md`.

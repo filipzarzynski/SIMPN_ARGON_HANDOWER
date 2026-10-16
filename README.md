@@ -1,23 +1,24 @@
 # SIMON (`Szpili/SIMON`) — Deep-Dive Audit & Parallel Agent Handover Workspace
 
 **Upstream Target Repository:** `https://github.com/Szpili/SIMON.git` (local reference cache at [`/home/agent/SIMON`](file:///home/agent/SIMON))  
-**Target Integration Base Branch:** `fz-contrib` (`1d71e6d`, synced with `upstream/main` `5854038` + `upstream/fz-contrib` `53854d2` — *agents NEVER PR directly to `main`; all commits are atomic and prefixed with `[FZ-*]` so the Team Captain can either merge `fz-contrib` or cherry-pick individual commits onto `main`*)  
+**Target Integration Base Branch:** `fz-contrib` (`82baa8e`, synced with `upstream/main` `5854038` + Stage 2 PR #9 — *agents NEVER PR directly to `main`; all commits are atomic and prefixed with `[FZ-*]` so the Team Captain can either merge `fz-contrib` or cherry-pick individual commits onto `main`*)  
 **Target Hackathon:** [AMD Developer Hackathon: ACT III](https://lablab.ai/ai-hackathons/amd-developer-hackathon-act-iii)  
 **Shared Agent Workspace:** [`/home/agent/SIMPN_ARGON_HANDOWER`](file:///home/agent/SIMPN_ARGON_HANDOWER) (`https://github.com/filipzarzynski/SIMPN_ARGON_HANDOWER.git`)
 
 ---
 
-## Quick Start: Launching Stage 2 (`H, J, G, I`) & Stage 3 (`K, L, M, N`) Parallel Agents in Antigravity
+## Quick Start: Launching Stage 3 (`K, L, M, N`) Parallel Agents in Antigravity
 
 This repository is configured with root [`AGENTS.md`](file:///home/agent/SIMPN_ARGON_HANDOWER/AGENTS.md) rules and 6 workspace skills in [`.agents/skills/`](file:///home/agent/SIMPN_ARGON_HANDOWER/.agents/skills/), including the new **[`simon-captain-review-guardrails`](file:///home/agent/SIMPN_ARGON_HANDOWER/.agents/skills/simon-captain-review-guardrails/SKILL.md)** skill distilled from the Team Captain's 22 review commits on Stage 1 ([`07_STAGE1_CAPTAIN_REVIEW_POSTMORTEM.md`](file:///home/agent/SIMPN_ARGON_HANDOWER/07_STAGE1_CAPTAIN_REVIEW_POSTMORTEM.md)).
 
-Open this directory as your workspace in Antigravity and prompt any agent (`Track H, J, G, I` in Stage 2; `Track K, L, M, N` in Stage 3) with:
+Stage 2 (`Tracks H, J, G, I`) is **COMPLETED** and submitted in upstream PR [Szpili/SIMON#9](https://github.com/Szpili/SIMON/pull/9). Stage 3 (`Tracks K, L, M, N`) is **READY TO RUN** off `82baa8e` on `fz-contrib`.
 
-> `you are track H agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues`
+Open this directory as your workspace in Antigravity and prompt any Stage 3 agent (`Track K, L, M, N`) with:
+
+> `you are track K agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues`
 
 See [`parallel_agents/ORCHESTRATOR_GUIDE.md`](file:///home/agent/SIMPN_ARGON_HANDOWER/parallel_agents/ORCHESTRATOR_GUIDE.md) for the **Recommended Wave Execution Strategy**:
-- **Stage 2 — Wave 2A (Urgent Protocol & Security Closing):** `Track H` (Live M1 token chain + `MAX_M1_TOKENS`) + `Track J` (Signed `JobResult` + Signed `RegisterMsg` & Operator Vouching + Sybil tests)
-- **Stage 2 — Wave 2B (Architecture, Stress-Test Matrix & Captain Gate):** `Track G` (`docs/ARCHITECTURE.md` + `STRESS-TESTS.md` rows 7/17/18) + `Track I` (`scripts/verify_all_fast.sh` + `docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md`)
+- **Stage 2 (COMPLETED in Upstream PR #9):** `Track H` (Live M1 + caps) + `Track J` (Signed `JobResult` + Sybil) + `Track G` (`docs/ARCHITECTURE.md`) + `Track I` (`scripts/verify_all_fast.sh`)
 - **Stage 3 — Wave 3A (VPN Attack Harness & Gateway Hardening):** `Track K` (`vpn_attack_harness.rs` + `agent.rs` M1 gate) + `Track L` (`simon_api.py` 1 MiB cap + `simon_monitor.py` bounded stats)
 - **Stage 3 — Wave 3B (Industry 25-Case Corpus & UI `/receipts` + `/demo` Polish):** `Track M` (`tickets.py` NFKC/`Cf` parity + `stress_corpus.json` 25 cases) + `Track N` (`/receipts` claim-label table + `/demo` client-nonce replay tamper)
 
@@ -33,7 +34,7 @@ See [`parallel_agents/ORCHESTRATOR_GUIDE.md`](file:///home/agent/SIMPN_ARGON_HAN
 5. **[`04_CLAIMS_VS_REALITY_MATRIX.md`](file:///home/agent/SIMPN_ARGON_HANDOWER/04_CLAIMS_VS_REALITY_MATRIX.md)** — Claim-by-claim verification table (`C1`–`C9`) and Master Catalog of **16 concrete bugs and security vulnerabilities (`BUG-01` through `BUG-16`)** with exact file and line numbers.
 6. **[`05_HACKATHON_ROADMAP_AND_PR_CATALOG.md`](file:///home/agent/SIMPN_ARGON_HANDOWER/05_HACKATHON_ROADMAP_AND_PR_CATALOG.md)** — Master Track Catalog (`Tracks A` through `N`) across Stage 1 (completed), Stage 2 (`Waves 2A & 2B`), and Stage 3 (`Waves 3A & 3B`).
 7. **[`07_STAGE1_CAPTAIN_REVIEW_POSTMORTEM.md`](file:///home/agent/SIMPN_ARGON_HANDOWER/07_STAGE1_CAPTAIN_REVIEW_POSTMORTEM.md)** — Comprehensive commit-by-commit post-mortem of the 22 review/fix commits made by `Szpili` and Claude Opus 5.5 when merging Stage 1 (`PR #8`), and how those 7 failure patterns are prevented in Stage 2 and Stage 3.
-8. **[`08_TEAM_SYNC_ARCHITECTURE_AND_WAVE_BRIEF.md`](file:///home/agent/SIMPN_ARGON_HANDOWER/08_TEAM_SYNC_ARCHITECTURE_AND_WAVE_BRIEF.md)** — Team sync call executive brief mapping current live architecture (`1d71e6d`) against Stage 2 (`Waves 2A & 2B`) and Stage 3 (`Waves 3A & 3B`) changes.
+8. **[`08_TEAM_SYNC_ARCHITECTURE_AND_WAVE_BRIEF.md`](file:///home/agent/SIMPN_ARGON_HANDOWER/08_TEAM_SYNC_ARCHITECTURE_AND_WAVE_BRIEF.md)** — Team sync call executive brief mapping current live architecture (`82baa8e`) against Stage 3 (`Waves 3A & 3B`) changes.
 
 ---
 
