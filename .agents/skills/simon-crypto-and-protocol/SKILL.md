@@ -1,22 +1,21 @@
 ---
 name: simon-crypto-and-protocol
 description: >-
-  Use this skill when modifying Rust crates in SIMON (Tracks A, B, D, E, or H:
-  simon-core, simon-verify-wasm, simon-node, simon-harness, or simon-cli).
-  Provides the exact cryptographic domain separators, M0/M1/M3 receipt verification
-  invariants, canonical JSON serialization rules, and Rust struct layouts.
+  Use this skill when modifying Rust crates in SIMON (Stage 1 Tracks A, B, D, E;
+  Stage 2 Tracks H, J; Stage 3 Track K: simon-core, simon-verify-wasm, simon-node,
+  simon-harness, or simon-cli). Provides the exact cryptographic domain separators,
+  M0/M1/M3 receipt verification invariants, conservative Precision rules, and P2P security rules.
 ---
 
 # SIMON Cryptography, Receipt & Protocol Reference (`simon-crypto-and-protocol`)
 
-Activate this skill whenever you work on **Track A, Track B, Track D, Track E, or Track H** (any Rust crate in `crates/`).
+Activate this skill whenever you work on **Track H, Track J, or Track K** (or any Rust crate in `crates/`). Also read [`.agents/skills/simon-captain-review-guardrails/SKILL.md`](../simon-captain-review-guardrails/SKILL.md).
 
 ## 1. Cryptographic Primitives & Domain Separation (`SIMON/*/v1`)
 
-All content hashing in `simon-core` uses **SHA-256 (`sha2::Sha256`)** over canonical JSON (`canonical_json`) with explicit ASCII domain tags followed by a `0x00` byte separator via `content_digest(domain, value)` (`crates/simon-core/src/crypto.rs`). Ed25519 signatures use `ed25519-dalek` over `domain.as_bytes() || 0x00 || payload`.
+All content hashing in `simon-core` uses **SHA-256 (`sha2::Sha256`)** over canonical JSON (`content_digest(&serde_json::json!({ "domena": DOMENA_*, ... }))` in `crates/simon-core/src/crypto.rs`). Ed25519 signatures use `Keypair::sign_digest(&digest)` and `PublicKey::verify_digest(&digest, &sig)`.
 
 - **NEVER** change any existing domain string in `crates/simon-core`:
-  - `SIMON/RECEIPT/v1` (`crates/simon-core/src/receipt.rs` — `DOMENA_RECEIPT`)
   - `SIMON/OUTPUT/v1` (`crates/simon-core/src/receipt.rs` — `DOMENA_ODCISKU_WYJSCIA`)
   - `SIMON/PROMPT/v1` (`crates/simon-core/src/receipt.rs` — `DOMENA_PROMPTU`)
   - `SIMON/CHAIN/v1` (`crates/simon-core/src/receipt.rs` — `DOMENA_LANCUCHA`)
@@ -25,30 +24,31 @@ All content hashing in `simon-core` uses **SHA-256 (`sha2::Sha256`)** over canon
   - `SIMON/GRANT/v1` & `SIMON/GRANT-PARAMS/v1` (`crates/simon-core/src/cap.rs`)
   - `SIMON/OBSERVATION/v1` (`crates/simon-core/src/obserwacja.rs`)
   - `SIMON/PRACA/v1` (`crates/simon-core/src/pomiar.rs`)
-- **Verification**: Always run `python3 scripts/wartownik_stalych.py` inside your clone after editing any `.rs` file.
+- **Stage 2 Domain Tags (`crates/simon-node/src/lib.rs`)**:
+  - `SIMON/JOB-RESULT/v1` (`DOMENA_JOB_RESULT`) — authenticates `JobResult` (both successes and failures) signed by the node's registered key.
+  - `SIMON/NODE-REGISTER/v1` (`DOMENA_NODE_REGISTER`) — authenticates `RegisterMsg` proof-of-possession and optional operator voucher signature.
 
-## 2. Receipt Tiers (Level 0, Level 1 `WiazaniaM1`, and `m3.rs`)
+## 2. Receipt Tiers, Precision & Verification Invariants
 
 Read [domain_tags_and_serde.md](./references/domain_tags_and_serde.md) for the exact struct fields and methods on `Receipt`, `WiazaniaM1`, `Precision`, and `SamplingCommitment`.
 
-- **Level 0 (`Receipt::verify_self` & `Receipt::zgodny_z_wyjsciem`)**:
-  - `Receipt::digest()` computes `content_digest("SIMON/RECEIPT/v1", &self.widok())`.
-  - `Receipt::verify_self()` verifies the 64-byte Ed25519 `signature` using `self.signer` over `"SIMON/RECEIPT/v1\0" || digest.as_bytes()`.
-  - `Receipt::zgodny_z_wyjsciem(output)` recomputes `odcisk_wyjscia(&self.job_id, output)` (`"SIMON/OUTPUT/v1"`) and compares it in constant time (`porownaj_staly_czas`) against `self.output_digest`.
-- **Level 1 (`Receipt::z_wiazaniem_m1` & `Receipt::zweryfikuj_m1`)**:
-  - Attaches `wiazania: Some(WiazaniaM1)` binding `tokenizer_hash`, `prompt_digest` (`odcisk_promptu(tokenizer_hash, client_nonce, prompt_token_ids)`), `token_chain_digest` (`lancuch_tokenow(&prompt_digest, output_token_ids)`), `params_digest`, and `seed`.
-  - **CRITICAL (`Track D`)**: `Receipt::zweryfikuj_m1` MUST call `self.verify_self()?` at the very start so unsigned or forged receipts cannot pass `zweryfikuj_m1` or `simon_verify_wasm::weryfikuj_m1`!
+- **Conservative `Precision` (`Precision::{Bf16, Fp16, Fp32, Fp8, Fp4, Int8, Int4, Unknown}`)**:
+  - Receipts **NEVER** sign a guessed precision. `wykryj_precyzje(model_hash)` splits on non-alphanumeric tokens, maps GGUF `q4`/`iq4`/`awq`/`gptq`/`int4`/`4bit`/`w4a*` to `Int4`, `q8`/`iq8`/`int8`/`8bit`/`w8a*` to `Int8`, and returns `Precision::Unknown` on unmarked names, unsupported widths (`Q5`, `Q6`), or conflicting markers (`awq-fp8`).
+- **Level 0 (`Receipt::verify_self`, `Receipt::zgodny_z_wyjsciem`, `podpisal_oczekiwany`)**:
+  - `verify_self()` checks the Ed25519 signature under `self.signer` (the key inside the receipt).
+  - Because `verify_self()` uses the receipt's own key, any attacker can generate a keypair and self-sign arbitrary text unless the client pins `--expect-signer` (`podpisal_oczekiwany` in `agent.rs`, `signer_pinned` in JSON output).
+- **Level 1 (`Receipt::z_wiazaniem_m1`, `Receipt::zweryfikuj_m1`, `poziom_sprawdzony`)**:
+  - **Live M1 Length Cap (`MAX_M1_TOKENS = 65_536`)**: Both `wspolne::tokenizuj_tekst` / `wyciagnij_id_tokenow` and `agent.rs` must enforce `MAX_M1_TOKENS` (`65_536`) so untrusted peers cannot trigger memory/CPU exhaustion via huge token arrays.
+  - **Client Proof Level (`poziom_sprawdzony`)**: A client reports `poziom_dowodu = 1` ONLY when `zweryfikuj_receipt` passed AND non-empty token vectors (`prompt_token_ids`, `output_token_ids`) were verified via `zweryfikuj_m1` against the **client's own `order.nonce`**. Node-declared `receipt.poziom()` is reported separately as `poziom_deklarowany_przez_node`.
 - **M3 (`crates/simon-core/src/m3.rs`)**:
-  - Evaluates token steps `Krok { indeks, token, topk: Vec<(u32, f64)> }` against `Polityka` via `ocena(kroki, p) -> Werdykt`.
-  - Note that `HardFail` is intentionally unused in `ocena()` per `docs/FP-RESULT.md` due to cross-hardware FP drift; severe violations return `Werdykt::DriftWarn`.
-  - **CRITICAL (`Track D`)**: Reject non-finite (`!lp.is_finite()`, i.e. `NaN` or `±Inf`) logprob values and do not assume `kr.topk` is pre-sorted before computing `top1_lp` and `margin`.
+  - `ocena_json` rejects any JSON audit containing `"simulated"` with any value other than `false` (`true`, `"true"`, `1`, `null`).
 
 ## 3. Build & Test Commands
 
-Always prepend `/home/agent/.cargo/bin` to `PATH`:
+Always prepend `/home/agent/.cargo/bin` to `PATH` and run clippy with `--all-targets`:
 ```bash
 export PATH="/home/agent/.cargo/bin:$PATH"
-cargo test --workspace
-cargo clippy --workspace -- -D warnings
-python3 scripts/wartownik_stalych.py
+python3 scripts/wartownik_stalych.py crates
+cargo test --workspace --locked
+cargo clippy --workspace --all-targets -- -D warnings
 ```

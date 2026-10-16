@@ -4,96 +4,118 @@ This repository is pre-configured as the **shared main Antigravity workspace** f
 
 ---
 
-## 1. Strategic Branch & Execution Order (`fz-contrib` Staging Architecture)
+## 0. Post-Mortem Lesson from Stage 1 (Why Stage 2 & Stage 3 Are Built Differently)
 
-### Why We Use `fz-contrib` Instead of PRing Directly to `main`
-1. **No Repo Spam / Zero Risk to `main`**: None of your agents ever push or open a PR against `main`. Every agent branches off **`fz-contrib`** into `fz/track-<X>-<slug>`, verifies zero merge conflicts, linearly integrates its commits onto `fz-contrib`, and targets **`fz-contrib`** as the PR base branch.
-2. **Solving the Team Captain Review Bottleneck**:
-   - Every commit on `fz-contrib` is atomic, non-breaking, and prefixed with `[FZ-<Track><N>]` (e.g. `[FZ-A1]`, `[FZ-D1]`, `[FZ-F1]`).
-   - Each agent's `PR_SUBMISSION.md` (and Stage 2 Track I's `docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md`) provides a **Captain's Cherry-Pick Menu** with exact `git cherry-pick <sha>` commands.
-   - Your Team Captain can either merge `fz-contrib` into `main` in one click, OR cherry-pick individual bugfixes in 10 seconds without taking anything they don't have time to review.
+When the Team Captain (`Szpili`) and his Claude Opus 5.5 agent reviewed and merged Stage 1 (`fz-contrib` $\rightarrow$ `main` in PR #8 `d108364`, plus 5 follow-up commits on `fz-contrib` through `53854d2`), they made **22 corrective commits** documented in [`07_STAGE1_CAPTAIN_REVIEW_POSTMORTEM.md`](../07_STAGE1_CAPTAIN_REVIEW_POSTMORTEM.md).
 
-```mermaid
-flowchart TD
-    Main["Szpili/SIMON: origin/main<br/>(Untouched by agents)"]
-    FZ["fz-contrib<br/>(Shared Staging & PR Base Branch)"]
-    Main --> FZ
-
-    subgraph Wave1A["Stage 1 — Wave 1A: Urgent Bug & Security Fixes (WAITING FOR MERGE UPSTREAM)"]
-        TD["Track D: [FZ-D] -> Upstream PR #4<br/>fz/track-D-core-security-hardening<br/>[FZ-D1..D4] Unsigned M1/WASM, IPv6 SSRF, NaN M3"]
-        TA["Track A: [FZ-A] -> Upstream PR #5<br/>fz/track-A-node-receipt-truth<br/>[FZ-A1..A4] Real timestamp_us, GGUF precision, --expect-signer"]
-        TF["Track F: [FZ-F] -> Upstream PR #6<br/>fz/track-F-submission-and-ui-polish<br/>[FZ-F1..F3] Submission doc fixes, UI badges, Python safety"]
-    end
-
-    subgraph Wave1B["Stage 1 — Wave 1B: Hackathon Showcase Feature Upgrades (COMPLETED IN FZ-CONTRIB)"]
-        TC["Track C: [FZ-C] -> Fork PR #5<br/>fz/track-C-industry-m7-agent<br/>[FZ-C1..C2] Multi-turn Gemma 4 tool triage + M7 Zezwolenie"]
-        TB["Track B: [FZ-B]<br/>fz/track-B-live-m1-receipts<br/>[FZ-B1..B3] Live M1 TokenCommitment verification in agent"]
-        TE["Track E: [FZ-E]<br/>fz/track-E-coordinator-gossipsub-bridge<br/>[FZ-E1..E3] Registry mark_degraded, VRF selection, MapReduce"]
-    end
-
-    subgraph Stage2["Stage 2 — Follow-Up Overhaul (Run AFTER Stage 1 is in fz-contrib)"]
-        TG["Track G: fz/track-G-architecture-and-docs-overhaul<br/>[FZ-G1..G2] docs/ARCHITECTURE.md & threat model alignment"]
-        TH["Track H: fz/track-H-e2e-integration-and-live-m1-bridge<br/>[FZ-H1..H2] Connect node.rs + wspolne.rs M1 + E2E test"]
-        TI["Track I: fz/track-I-captain-cherry-pick-menu-and-ci<br/>[FZ-I1..I2] Captain Cherry-Pick Guide & verify_all_fast.sh"]
-    end
-
-    FZ --> Wave1A
-    FZ --> Wave1B
-    Wave1A -->|"PR & linear cherry-pick into fz-contrib"| FZ
-    Wave1B -->|"PR & linear cherry-pick into fz-contrib"| FZ
-    FZ --> Stage2
-```
-
-### Recommended Execution Order
-- **Option 1 (Wave 1A First $\rightarrow$ Wave 1B Second $\rightarrow$ Stage 2 Third — Recommended)**:
-  1. Launch **Tracks D, A, and F** in parallel first (~15–20 mins). These fix all critical security bugs (`BUG-04`, `BUG-06`, `BUG-15`), the `0 µs` timestamp & `"fp16"` receipt lies (`BUG-01`, `BUG-02`), and the `LABLAB-SUBMISSION.md` contradictions (`BUG-16`). Even if the hackathon ended 20 minutes later, the Captain will 100% cherry-pick these onto `main`.
-  2. Launch **Tracks C, B, and E** in parallel next (~25 mins). Note that all 6 Stage 1 tracks (`A`–`F`) have **100% disjoint file scopes**, so you can also launch all 6 simultaneously if you have 6 agent slots!
-  3. Once Stage 1 tracks (`A`–`F`) have finished and integrated into `fz-contrib`, launch **Stage 2 Tracks G, H, and I** in parallel (~15 mins) to wire the cross-file `node.rs` + `wspolne.rs` E2E test (`Track H`), overhaul `docs/ARCHITECTURE.md` (`Track G`), and generate the Captain's Cherry-Pick Guide (`Track I`).
+We have baked all 7 lessons from those 22 commits directly into:
+1. **[`.agents/skills/simon-captain-review-guardrails/SKILL.md`](../.agents/skills/simon-captain-review-guardrails/SKILL.md)** (mandatory reading for every agent).
+2. **[`.agents/skills/simon-verify-suite/scripts/verify_track.sh`](../.agents/skills/simon-verify-suite/scripts/verify_track.sh)** (automated Pass 2 blocks workspace path leaks, banned overclaims, fake signatures, and runs `cargo clippy --all-targets -- -D warnings` + all Python `.selfcheck()` suites).
+3. **100% alignment with the Captain's explicit `## Next` list in [`docs/STRESS-TESTS.md`](file:///home/agent/SIMON/docs/STRESS-TESTS.md)**:
+   - `Next #1` (Sign `JobResult` including failures) + `Next #3` (Signed node registration & vouching + Sybil tests) $\rightarrow$ **Stage 2, Wave 2A (`Track J`)**
+   - `Next #2` (Wire live M1 token chain with `MAX_M1_TOKENS = 65_536` caps) $\rightarrow$ **Stage 2, Wave 2A (`Track H`)**
+   - `Next #4` (Prepared VPN target network attack harness reporting against `docs/STRESS-TESTS.md`) $\rightarrow$ **Stage 3, Wave 3A (`Track K`)**
 
 ---
 
-## 2. Ready-to-Paste Prompts for Antigravity Agents
+## 1. Strategic Branch & Wave Execution Order (`fz-contrib` Staging Architecture)
 
-Open `/home/agent/SIMPN_ARGON_HANDOWER` as the workspace in Antigravity and paste the prompt for any track (`A`–`F` in Stage 1; `G`–`I` in Stage 2):
+```mermaid
+flowchart TD
+    Main["Szpili/SIMON: upstream/main (5854038)<br/>+ upstream/fz-contrib (53854d2)"]
+    FZ["fz-contrib (1d71e6d)<br/>(Shared Staging & PR Base Branch — NEVER PR to main)"]
+    Main --> FZ
 
-### Stage 1 Prompts (Can Run All 6 in Parallel, or Wave 1A `[D, A, F]` then Wave 1B `[C, B, E]`)
+    subgraph Wave2A["Stage 2 — Wave 2A: Urgent Protocol & Security Closing (Run First in Parallel)"]
+        TH["Track H [FZ-H]<br/>fz/track-H-e2e-integration-and-live-m1-bridge<br/>STRESS-TESTS Next #2: Live M1 token binding + MAX_M1_TOKENS cap + E2E test"]
+        TJ["Track J [FZ-J]<br/>fz/track-J-signed-job-result-and-registration<br/>STRESS-TESTS Next #1 & #3: SignedJobResult + RegisterMsg + NodeVoucher + Sybil test"]
+    end
 
-- **Track D (Urgent Core & WASM Security)**:
-  ```text
-  you are track D agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
-  ```
-- **Track A (Urgent Node Receipt Truthfulness)**:
-  ```text
-  you are track A agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
-  ```
-- **Track F (Urgent Submission Doc, UI & Python Fixes)**:
-  ```text
-  you are track F agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
-  ```
-- **Track C (Track 1 Intelligent Industry Gemma 4 M7 Agent)**:
-  ```text
-  you are track C agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
-  ```
-- **Track B (Live M1 Token Commitment Verification)**:
-  ```text
-  you are track B agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
-  ```
-- **Track E (P2P Coordinator HTTP Bridge & MapReduce Fix)**:
-  ```text
-  you are track E agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
-  ```
+    subgraph Wave2B["Stage 2 — Wave 2B: Architecture, Stress-Test Matrix & Captain Fast-Gate (Run Second in Parallel)"]
+        TG["Track G [FZ-G]<br/>fz/track-G-architecture-and-docs-overhaul<br/>docs/ARCHITECTURE.md + STRESS-TESTS.md rows 7/17/18 + THREAT-MODEL.md"]
+        TI["Track I [FZ-I]<br/>fz/track-I-captain-cherry-pick-menu-and-ci<br/>scripts/verify_all_fast.sh + docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md"]
+    end
 
-### Stage 2 Prompts (Run AFTER Stage 1 Tracks A–F Finish)
+    subgraph Wave3A["Stage 3 — Wave 3A: Adversarial VPN Target Network & Gateway Hardening (If Time Permits)"]
+        TK["Track K [FZ-K]<br/>fz/track-K-vpn-attack-harness-and-agent-m1-gate<br/>STRESS-TESTS Next #4: vpn_attack_harness.rs + agent.rs M1 missing-token gate"]
+        TL["Track L [FZ-L]<br/>fz/track-L-gateway-and-monitor-hardening<br/>simon_api.py 1 MiB cap + signer_pinned log + simon_monitor.py bounded stats"]
+    end
 
-- **Track G (Architecture & Documentation Overhaul)**:
-  ```text
-  you are track G agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
-  ```
-- **Track H (Live Node + Agent M1 E2E Integration)**:
+    subgraph Wave3B["Stage 3 — Wave 3B: Industry 25-Case Stress Corpus & UI /receipts + /demo Polish (If Time Permits)"]
+        TM["Track M [FZ-M]<br/>fz/track-M-industry-adversarial-corpus<br/>tickets.py NFKC/Cf parity + agent_triage.py link/role guards + 25-case corpus"]
+        TN["Track N [FZ-N]<br/>fz/track-N-ui-receipts-and-demo-polish<br/>/receipts claim-label table + /demo client-nonce replay tamper & aria-pressed"]
+    end
+
+    FZ --> Wave2A
+    Wave2A -->|"Linear cherry-pick into fz-contrib"| FZ
+    FZ --> Wave2B
+    Wave2B -->|"Linear cherry-pick into fz-contrib"| FZ
+    FZ --> Wave3A
+    Wave3A -->|"Linear cherry-pick into fz-contrib"| FZ
+    FZ --> Wave3B
+    Wave3B -->|"Linear cherry-pick into fz-contrib"| FZ
+```
+
+### Recommended Wave Execution Order
+1. **Stage 2 — Wave 2A (`Tracks H & J` in parallel — ~15 mins)**:
+   - Closes the Captain's top 3 `docs/STRESS-TESTS.md` `## Next` items (`#1` Signed `JobResult`, `#2` Live M1 with `MAX_M1_TOKENS`, `#3` Signed `RegisterMsg` + `NodeVoucher` + Sybil tests).
+2. **Stage 2 — Wave 2B (`Tracks G & I` in parallel — ~10 mins)**:
+   - Updates `docs/STRESS-TESTS.md` rows 7/17/18, creates `docs/ARCHITECTURE.md`, adds `scripts/verify_all_fast.sh`, and generates `docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md` for the Captain.
+   - *(Note: All 4 Stage 2 tracks `H, J, G, I` have 100% disjoint file scopes, so if you want to run all 4 simultaneously, they will never conflict! Running `2A` then `2B` simply lets Track I include the exact commit SHAs of `H` and `J` in `FZ-CONTRIB-CHERRY-PICK-GUIDE.md`.)*
+3. **Stage 3 — Wave 3A (`Tracks K & L` in parallel — ~15 mins, if time permits)**:
+   - Delivers `docs/STRESS-TESTS.md` `Next #4` (`crates/simon-cli/tests/vpn_attack_harness.rs`), closes the `agent.rs` M1 missing-token downgrade gap, and hardens `simon_api.py` + `simon_monitor.py`.
+4. **Stage 3 — Wave 3B (`Tracks M & N` in parallel — ~15 mins, if time permits)**:
+   - Unifies NFKC/`Cf` and link/role/urgency checks across `tickets.py` and `agent_triage.py`, expands `stress_corpus.json` from 17 to 25 cases, and polishes `/receipts` + `/demo`.
+   - *(All 4 Stage 3 tracks `K, L, M, N` also have 100% disjoint file scopes!)*
+
+---
+
+## 2. Ready-to-Paste Prompts for Antigravity Agents (Stage 2 & Stage 3)
+
+Open `/home/agent/SIMPN_ARGON_HANDOWER` as the workspace in Antigravity and paste the prompt for any track:
+
+### Stage 2 — Wave 2A Prompts (Launch Together in Parallel)
+
+- **Track H (Live M1 Token Chain Bridge + `MAX_M1_TOKENS` Cap + E2E Test)**:
   ```text
   you are track H agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
   ```
-- **Track I (Captain Cherry-Pick Menu & Fast Full-Stack Verifier)**:
+- **Track J (Signed `JobResult` + Signed `RegisterMsg` & Operator Vouching + Sybil Tests)**:
+  ```text
+  you are track J agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
+  ```
+
+### Stage 2 — Wave 2B Prompts (Launch Together After Wave 2A, or in Parallel with 2A)
+
+- **Track G (Architecture Diagrams & `STRESS-TESTS.md` Rows 7/17/18 Alignment)**:
+  ```text
+  you are track G agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
+  ```
+- **Track I (Captain Fast Verification Script `verify_all_fast.sh` & Cherry-Pick Guide)**:
   ```text
   you are track I agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
+  ```
+
+---
+
+### Stage 3 — Wave 3A Prompts (Launch Together After Stage 2)
+
+- **Track K (`STRESS-TESTS.md` Next #4 VPN Attack Harness & Agent M1 Gate)**:
+  ```text
+  you are track K agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
+  ```
+- **Track L (OpenAI Gateway 1 MiB Cap & Network Monitor Hardening)**:
+  ```text
+  you are track L agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
+  ```
+
+### Stage 3 — Wave 3B Prompts (Launch Together After Wave 3A, or All 4 Stage 3 Tracks in Parallel)
+
+- **Track M (Industry 25-Case Adversarial Stress Corpus & NFKC/Link Parity)**:
+  ```text
+  you are track M agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
+  ```
+- **Track N (UI `/receipts` Claim-Label Matrix & `/demo` Nonce Replay Tamper)**:
+  ```text
+  you are track N agent, please clone upstream repo to your dedicated subfolder in this workspace and start working on your assigned tasks on dedicated branch making sure commits are granular, logical and not breaking, then once you are finished and checked everything multiple times create a pull request with your task addressing any possible merge issues
   ```

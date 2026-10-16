@@ -2,7 +2,7 @@
 """
 SIMON Parallel Agent Pull Request & `fz-contrib` Integration Script.
 - Never targets `main` directly: all Track PRs target the dedicated `fz-contrib` branch.
-- Verifies zero merge conflicts against `fz-contrib` and all sibling Track branches (`A`-`I`).
+- Verifies zero merge conflicts against `fz-contrib` and all sibling Track branches (`A`-`N`).
 - Integrates verified commits cleanly onto `hub/fz-contrib` under an exclusive file lock.
 - Pushes `fz-contrib` and `fz/track-*` to remote if credentials exist and opens PR targeting `fz-contrib`.
 - Generates a Captain's Cherry-Pick Menu in `PR_SUBMISSION.md`.
@@ -74,24 +74,64 @@ TRACK_META = {
         "tag": "FZ-G",
         "branch": "fz/track-G-architecture-and-docs-overhaul",
         "dir_name": "track_G_architecture_and_docs_overhaul",
-        "title": "[FZ-G] docs(arch): add comprehensive ARCHITECTURE.md and align threat model & whitepaper with verified codebase",
-        "bugs": ["ARCH-DOCS"],
+        "title": "[FZ-G] docs(arch,stress-tests): add ARCHITECTURE.md and update STRESS-TESTS.md & THREAT-MODEL.md for Stage 2",
+        "bugs": ["ARCH-DOCS", "STRESS-TESTS-ROWS-7-17-18"],
     },
     "H": {
         "stage": 2,
         "tag": "FZ-H",
         "branch": "fz/track-H-e2e-integration-and-live-m1-bridge",
         "dir_name": "track_H_e2e_integration_and_live_m1_bridge",
-        "title": "[FZ-H] feat(cli): connect live node M1 token commitment builder with agent verifier and add E2E test",
-        "bugs": ["BUG-03-E2E"],
+        "title": "[FZ-H] feat(cli): wire live M1 token chain with MAX_M1_TOKENS caps and in-process E2E test",
+        "bugs": ["STRESS-TESTS-NEXT-2", "BUG-03-E2E"],
     },
     "I": {
         "stage": 2,
         "tag": "FZ-I",
         "branch": "fz/track-I-captain-cherry-pick-menu-and-ci",
         "dir_name": "track_I_captain_cherry_pick_menu_and_ci",
-        "title": "[FZ-I] docs(contrib): generate Team Captain cherry-pick menu and fast full-stack verification script",
+        "title": "[FZ-I] feat(scripts,docs): add verify_all_fast.sh guardrail runner and Stage 2 Captain cherry-pick menu",
         "bugs": ["CAPTAIN-REVIEW-UX"],
+    },
+    "J": {
+        "stage": 2,
+        "tag": "FZ-J",
+        "branch": "fz/track-J-signed-job-result-and-registration",
+        "dir_name": "track_J_signed_job_result_and_registration",
+        "title": "[FZ-J] feat(node,coord): sign JobResult (including failures) and enforce signed RegisterMsg + operator vouching",
+        "bugs": ["STRESS-TESTS-NEXT-1", "STRESS-TESTS-NEXT-3"],
+    },
+    "K": {
+        "stage": 3,
+        "tag": "FZ-K",
+        "branch": "fz/track-K-vpn-attack-harness-and-agent-m1-gate",
+        "dir_name": "track_K_vpn_attack_harness_and_agent_m1_gate",
+        "title": "[FZ-K] test(cli): add VPN target network attack harness (STRESS-TESTS Next #4) and reject M1 receipts missing token arrays",
+        "bugs": ["STRESS-TESTS-NEXT-4"],
+    },
+    "L": {
+        "stage": 3,
+        "tag": "FZ-L",
+        "branch": "fz/track-L-gateway-and-monitor-hardening",
+        "dir_name": "track_L_gateway_and_monitor_hardening",
+        "title": "[FZ-L] feat(api,monitor): enforce 1 MiB body limit, log signer_pinned, bound fetch_stats, and add --selfcheck",
+        "bugs": ["VPN-GATEWAY-HARDENING"],
+    },
+    "M": {
+        "stage": 3,
+        "tag": "FZ-M",
+        "branch": "fz/track-M-industry-adversarial-corpus",
+        "dir_name": "track_M_industry_adversarial_corpus",
+        "title": "[FZ-M] fix(industry): unify NFKC/Cf/link/role guardrails across tickets.py and agent_triage.py and expand stress_corpus.json to 25 cases",
+        "bugs": ["STRESS-TESTS-ROW-11-12-13"],
+    },
+    "N": {
+        "stage": 3,
+        "tag": "FZ-N",
+        "branch": "fz/track-N-ui-receipts-and-demo-polish",
+        "dir_name": "track_N_ui_receipts_and_demo_polish",
+        "title": "[FZ-N] feat(ui): add claim-label table to /receipts and client-nonce replay tamper preset to /demo",
+        "bugs": ["UI-RECEIPTS-DEMO-POLISH"],
     },
 }
 
@@ -110,13 +150,13 @@ def run(cmd, cwd=None, check=True):
 
 def main():
     parser = argparse.ArgumentParser(description="Prepare and create PR targeting fz-contrib for SIMON Track")
-    parser.add_argument("--track", required=True, help="Track letter: A..I")
+    parser.add_argument("--track", required=True, help="Track letter: A..N")
     parser.add_argument("--title", default=None, help="Optional custom PR title")
     args = parser.parse_args()
 
     track = args.track.upper().replace("TRACK_", "").replace("TRACK", "").strip()
     if track not in TRACK_META:
-        print(f"ERROR: Invalid track '{args.track}'. Choose from A..I.", file=sys.stderr)
+        print(f"ERROR: Invalid track '{args.track}'. Choose from A..N.", file=sys.stderr)
         sys.exit(1)
 
     meta = TRACK_META[track]
@@ -138,6 +178,9 @@ def main():
         fcntl.flock(lf, fcntl.LOCK_EX)
         run(["git", "fetch", "hub"], cwd=clone_dir)
 
+        # Record the pre-integration base SHA so we can compute the track's own commits even after advancing fz-contrib
+        base_sha_before = run(["git", "rev-parse", diff_base], cwd=clone_dir).stdout.strip()
+
         # Ensure track branch is cleanly rebased onto its stage base
         rebase_res = run(["git", "rebase", diff_base], cwd=clone_dir, check=False)
         if rebase_res.returncode != 0:
@@ -148,14 +191,14 @@ def main():
         run(["git", "push", "-f", "hub", f"HEAD:refs/heads/{meta['branch']}"], cwd=clone_dir)
         run(["git", "fetch", "hub"], cwd=clone_dir)
 
-        # Check mergeability against current hub/fz-contrib and all other active track branches
+        # Check mergeability against current hub/fz-contrib and all other active track branches in the same stage
         mt_base = run(["git", "merge-tree", "--write-tree", f"refs/remotes/hub/{BASE_BRANCH}", "HEAD"], cwd=clone_dir, check=False)
         if mt_base.returncode != 0:
             raise RuntimeError(f"Conflict detected with {BASE_BRANCH}:\n{mt_base.stdout}")
         cross_track_results.append(f"- **Base `{BASE_BRANCH}`**: CLEAN (0 conflicts)")
 
         for other_track, other_meta in TRACK_META.items():
-            if other_track == track:
+            if other_track == track or other_meta["stage"] != meta["stage"]:
                 continue
             other_ref = f"refs/remotes/hub/{other_meta['branch']}"
             ref_check = run(["git", "show-ref", "--verify", "--quiet", other_ref], cwd=clone_dir, check=False)
@@ -170,26 +213,24 @@ def main():
 
         # Integrate this track's commits cleanly onto local fz-contrib branch and push to hub/fz-contrib
         current_branch = meta["branch"]
-        run(["git", "checkout", "-B", BASE_BRANCH, f"refs/remotes/hub/{BASE_BRANCH}"], cwd=clone_dir)
-        # Rebase or cherry-pick the track's commits linearly onto fz-contrib so every commit on fz-contrib is linear & cherry-pickable!
         commits_to_apply = run(
-            ["git", "rev-list", "--reverse", f"{diff_base}..{current_branch}"],
+            ["git", "rev-list", "--reverse", f"{base_sha_before}..{current_branch}"],
             cwd=clone_dir,
         ).stdout.strip().splitlines()
+
+        run(["git", "checkout", "-B", BASE_BRANCH, f"refs/remotes/hub/{BASE_BRANCH}"], cwd=clone_dir)
         for csha in commits_to_apply:
-            # Skip if an identical patch-id is already on fz-contrib
             cp = run(["git", "cherry-pick", csha], cwd=clone_dir, check=False)
             if cp.returncode != 0:
                 run(["git", "cherry-pick", "--abort"], cwd=clone_dir, check=False)
-                # Fall back to no-ff merge if cherry-pick already partially applied
                 run(["git", "merge", "--no-edit", current_branch], cwd=clone_dir)
                 break
         run(["git", "push", "hub", f"{BASE_BRANCH}:refs/heads/{BASE_BRANCH}"], cwd=clone_dir)
         run(["git", "checkout", current_branch], cwd=clone_dir)
 
-    # 2. Collect commit log, Captain's Cherry-Pick table, and diffstat
+    # 2. Collect commit log, Captain's Cherry-Pick table, and diffstat against base_sha_before
     log_lines = run(
-        ["git", "log", "--reverse", "--format=%h|%H|%s", f"{diff_base}..HEAD"],
+        ["git", "log", "--reverse", "--format=%h|%H|%s", f"{base_sha_before}..HEAD"],
         cwd=clone_dir,
     ).stdout.strip().splitlines()
 
@@ -206,9 +247,8 @@ def main():
                 f"| `{idx}` | `{short_sha}` | {subj} | `{files_in_commit}` | `git cherry-pick {full_sha}` |"
             )
 
-    commits_out = run(["git", "log", "--oneline", f"{diff_base}..HEAD"], cwd=clone_dir).stdout.strip()
-    diffstat_out = run(["git", "diff", "--stat", f"{diff_base}...HEAD"], cwd=clone_dir).stdout.strip()
-    changed_files = run(["git", "diff", "--name-only", f"{diff_base}...HEAD"], cwd=clone_dir).stdout.strip().splitlines()
+    diffstat_out = run(["git", "diff", "--stat", f"{base_sha_before}...HEAD"], cwd=clone_dir).stdout.strip()
+    changed_files = run(["git", "diff", "--name-only", f"{base_sha_before}...HEAD"], cwd=clone_dir).stdout.strip().splitlines()
     head_sha = run(["git", "rev-parse", "HEAD"], cwd=clone_dir).stdout.strip()
 
     # 3. Attempt push of BOTH `fz-contrib` and `fz/track-*` to remote fork or origin, and open PR targeting `fz-contrib` (NEVER `main`!)
@@ -217,30 +257,24 @@ def main():
     fork_url = "https://github.com/filipzarzynski/SIMON.git"
     upstream_url = "https://github.com/Szpili/SIMON.git"
 
-    # Configure remotes in clone_dir if missing
     run(["git", "remote", "add", "fork", fork_url], cwd=clone_dir, check=False)
     run(["git", "remote", "add", "upstream", upstream_url], cwd=clone_dir, check=False)
 
     remote_pushed = False
-    push_dest = push_remote
 
-    # If token is provided, construct authenticated remote url
     if token:
         auth_fork_url = f"https://x-access-token:{token}@github.com/filipzarzynski/SIMON.git"
         push_fzc = run(["git", "push", auth_fork_url, f"{BASE_BRANCH}:refs/heads/{BASE_BRANCH}"], cwd=clone_dir, check=False)
         push_tr = run(["git", "push", "-f", auth_fork_url, f"HEAD:refs/heads/{meta['branch']}"], cwd=clone_dir, check=False)
         if push_fzc.returncode == 0 and push_tr.returncode == 0:
             remote_pushed = True
-            push_dest = "fork (authenticated via GITHUB_TOKEN)"
 
     if not remote_pushed:
-        # Try pushing to configured remotes (fork, then push_remote)
         for rem in [push_remote, "fork", "origin"]:
             p1 = run(["git", "push", rem, f"{BASE_BRANCH}:refs/heads/{BASE_BRANCH}"], cwd=clone_dir, check=False)
             p2 = run(["git", "push", "-u", rem, f"HEAD:refs/heads/{meta['branch']}"], cwd=clone_dir, check=False)
             if p1.returncode == 0 and p2.returncode == 0:
                 remote_pushed = True
-                push_dest = rem
                 break
 
     # Also keep /home/agent/SIMON synchronized with local fz-contrib & track branch
@@ -259,7 +293,7 @@ def main():
     pr_body = f"""## Summary (Track {track} — [{meta['tag']}], Stage {meta['stage']})
 
 - **Target Integration Branch**: `{BASE_BRANCH}` *(does **not** touch `main` directly; prepared for Team Captain review / cherry-pick)*
-- **Addresses Audit Findings**: {', '.join(f'`{b}`' for b in meta['bugs'])}
+- **Addresses Roadmap / Stress-Test Items**: {', '.join(f'`{b}`' for b in meta['bugs'])}
 
 ### Captain's Granular Cherry-Pick Menu
 Every commit on this branch is self-contained, compiles cleanly, and passes tests independently:
@@ -276,7 +310,6 @@ Every commit on this branch is self-contained, compiles cleanly, and passes test
 """
 
     pr_url = None
-    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
     repo_slug = os.environ.get("SIMON_GITHUB_REPO", "filipzarzynski/SIMON")
     if remote_pushed and token:
         try:
@@ -306,7 +339,7 @@ Every commit on this branch is self-contained, compiles cleanly, and passes test
     # 4. Write git bundle and PR_SUBMISSION.md artifact in the track's spec folder
     spec_dir.mkdir(parents=True, exist_ok=True)
     bundle_path = spec_dir / f"{meta['tag']}.bundle"
-    run(["git", "bundle", "create", str(bundle_path), f"{diff_base}..HEAD"], cwd=clone_dir)
+    run(["git", "bundle", "create", str(bundle_path), f"{base_sha_before}..HEAD"], cwd=clone_dir)
 
     report_path = spec_dir / "PR_SUBMISSION.md"
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -316,6 +349,7 @@ Every commit on this branch is self-contained, compiles cleanly, and passes test
 - **Track**: Track {track} ([`{meta['tag']}`])
 - **Track Branch**: `{meta['branch']}`
 - **Target PR Base Branch**: `{BASE_BRANCH}` (**NEVER** directly to `main`)
+- **Base Commit Before Integration**: `{base_sha_before}`
 - **HEAD Commit**: `{head_sha}`
 - **Integrated into Local Hub `{BASE_BRANCH}`**: `YES (Linear / Cherry-Pickable)`
 - **Portable Git Bundle**: `{bundle_path}`

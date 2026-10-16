@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <A|B|C|D|E|F|G|H|I> [--final]"
+    echo "Usage: $0 <A|B|C|D|E|F|G|H|I|J|K|L|M|N> [--final]"
     exit 1
 fi
 
@@ -25,12 +25,12 @@ fi
 cd "$CLONE_DIR"
 git fetch hub 2>/dev/null || true
 
-# Stage 1 tracks compare against hub/main; Stage 2 tracks compare against hub/fz-contrib
+# Stage 1 tracks compare against hub/main; Stage 2 & Stage 3 tracks compare against hub/fz-contrib
 case "$TRACK" in
     A|B|C|D|E|F)
         DIFF_BASE="hub/main"
         ;;
-    G|H|I)
+    G|H|I|J|K|L|M|N)
         DIFF_BASE="hub/fz-contrib"
         ;;
     *)
@@ -40,7 +40,7 @@ case "$TRACK" in
 esac
 
 echo "========================================================================"
-echo " [Pass 1/3] Auditing File Scope & Working Tree for Track $TRACK (vs $DIFF_BASE)"
+echo " [Pass 1/4] Auditing File Scope & Working Tree for Track $TRACK (vs $DIFF_BASE)"
 echo "========================================================================"
 
 if [ "$FINAL_MODE" = "--final" ]; then
@@ -83,13 +83,28 @@ is_allowed_file() {
             [[ "$f" == "README.md" || "$f" == "docs/zgloszenie/LABLAB-SUBMISSION.md" || "$f" == "ui/src/routes/demo/+page.svelte" || "$f" == "ui/src/routes/network/+page.svelte" || "$f" == "ui/src/lib/components/NodePanel.svelte" || "$f" == "tools/simon-api/simon_api.py" || "$f" == "tools/simon-verifier/verifier_loop.py" || "$f" == "demo/app.py" || "$f" == "demo/app.en.py" ]]
             ;;
         G)
-            [[ "$f" == "docs/ARCHITECTURE.md" || "$f" == "docs/THREAT-MODEL.md" || "$f" == "ROADMAP.md" || "$f" == "docs/whitepaper/SIMON-whitepaper-EN.md" ]]
+            [[ "$f" == "docs/ARCHITECTURE.md" || "$f" == "docs/STRESS-TESTS.md" || "$f" == "docs/THREAT-MODEL.md" || "$f" == "ROADMAP.md" || "$f" == "docs/whitepaper/SIMON-whitepaper-EN.md" ]]
             ;;
         H)
-            [[ "$f" == "crates/simon-cli/src/node.rs" || "$f" == "crates/simon-cli/tests/e2e_m1_receipt.rs" ]]
+            [[ "$f" == "crates/simon-cli/src/wspolne.rs" || "$f" == "crates/simon-cli/src/node.rs" || "$f" == "crates/simon-cli/tests/e2e_m1_receipt.rs" ]]
             ;;
         I)
             [[ "$f" == "docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md" || "$f" == "scripts/verify_all_fast.sh" ]]
+            ;;
+        J)
+            [[ "$f" == "crates/simon-node/src/lib.rs" || "$f" == "crates/simon-cli/src/coord.rs" ]]
+            ;;
+        K)
+            [[ "$f" == "crates/simon-cli/src/agent.rs" || "$f" == "crates/simon-cli/tests/vpn_attack_harness.rs" ]]
+            ;;
+        L)
+            [[ "$f" == "tools/simon-api/simon_api.py" || "$f" == "tools/simon-api/test_gateway.py" || "$f" == "tools/simon-monitor/simon_monitor.py" ]]
+            ;;
+        M)
+            [[ "$f" == "tools/simon-industry/tickets.py" || "$f" == "tools/simon-industry/agent_triage.py" || "$f" == "tools/simon-industry/stress_corpus.json" ]]
+            ;;
+        N)
+            [[ "$f" == "ui/src/routes/receipts/+page.svelte" || "$f" == "ui/src/routes/demo/+page.svelte" ]]
             ;;
         *)
             return 1
@@ -113,7 +128,36 @@ fi
 echo "PASS 1 OK: All modified files are strictly within Track $TRACK's permitted scope."
 
 echo "========================================================================"
-echo " [Pass 2/3] Auditing Granular Cherry-Pickable Commits for Track $TRACK"
+echo " [Pass 2/4] Captain Guardrails Audit (Path Leaks & Banned Overclaims)"
+echo "========================================================================"
+GUARDRAIL_FAIL=0
+while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    [ ! -f "$file" ] && continue
+    # 1. Never leak handover workspace path into SIMON repo (except verify_all_fast.sh which checks for it)
+    if [[ "$file" != "scripts/verify_all_fast.sh" ]]; then
+        if grep -nE "SIMPN_ARGON_HANDOWER|/home/agent/" "$file"; then
+            echo "ERROR: Captain Guardrail Violation in '$file': leaked local workspace path!"
+            GUARDRAIL_FAIL=1
+        fi
+    fi
+    # 2. Never publish banned overclaims outside THREAT-MODEL.md or verify_all_fast.sh
+    if [[ "$file" != "docs/THREAT-MODEL.md" && "$file" != "scripts/verify_all_fast.sh" ]]; then
+        if grep -niE "100% Authentic|100% Cryptographically Verified|guarantees the claimed model|SIMULATED P2P TOPOLOGY|ed25519:operator_sig_" "$file"; then
+            echo "ERROR: Captain Guardrail Violation in '$file': banned overclaim or fake signature phrase detected!"
+            GUARDRAIL_FAIL=1
+        fi
+    fi
+done <<< "$CHANGED_FILES"
+
+if [ "$GUARDRAIL_FAIL" -ne 0 ]; then
+    echo "FAILED Pass 2: Fix Captain Guardrail violations before proceeding."
+    exit 1
+fi
+echo "PASS 2 OK: Zero workspace path leaks or banned overclaims."
+
+echo "========================================================================"
+echo " [Pass 3/4] Auditing Granular Cherry-Pickable Commits for Track $TRACK"
 echo "========================================================================"
 COMMIT_COUNT="$(git rev-list --count "$DIFF_BASE"..HEAD)"
 echo "Commits ahead of $DIFF_BASE: $COMMIT_COUNT"
@@ -125,47 +169,54 @@ if [ "$FINAL_MODE" = "--final" ] && [ "$COMMIT_COUNT" -lt 1 ]; then
 fi
 
 echo "========================================================================"
-echo " [Pass 3/3] Running Verification & Test Suites for Track $TRACK"
+echo " [Pass 4/4] Running Verification & Test Suites for Track $TRACK"
 echo "========================================================================"
 
 case "$TRACK" in
     A)
         python3 scripts/wartownik_stalych.py
         cargo test -p simon-core -p simon-cli
-        cargo clippy -p simon-cli --no-deps -- -D warnings
+        cargo clippy -p simon-cli --all-targets -- -D warnings
         ;;
-    B|H)
+    B|H|K)
         python3 scripts/wartownik_stalych.py
         cargo test -p simon-core -p simon-harness -p simon-cli
-        cargo clippy -p simon-harness -p simon-cli -- -D warnings
+        cargo clippy -p simon-harness -p simon-cli --all-targets -- -D warnings
         ;;
-    C)
+    C|M)
         python3 tools/simon-industry/rules.py
-        python3 -m py_compile tools/simon-industry/rules.py tools/simon-industry/tickets.py tools/simon-industry/export_ui.py
-        if [ -f "tools/simon-industry/agent_triage.py" ]; then
-            python3 -m py_compile tools/simon-industry/agent_triage.py
-            python3 tools/simon-industry/agent_triage.py --selfcheck
-        fi
-        python3 -c 'import json; d=json.load(open("ui/src/lib/industry-run.json")); assert len(d["records"]) > 0 and d["summary"]["tickets"] > 0; print("industry-run.json records:", len(d["records"]), "tickets:", d["summary"]["tickets"])'
-        if [ -d "ui" ]; then
+        python3 tools/simon-industry/tickets.py --help >/dev/null
+        python3 -c 'import sys; sys.path.insert(0, "tools/simon-industry"); import tickets; tickets.selfcheck(); print("tickets.selfcheck() OK")'
+        python3 tools/simon-industry/agent_triage.py --selfcheck
+        python3 tools/simon-industry/export_ui.py
+        python3 -m py_compile tools/simon-industry/rules.py tools/simon-industry/tickets.py tools/simon-industry/agent_triage.py tools/simon-industry/export_ui.py
+        if [[ "$TRACK" == "C" && -d "ui" ]]; then
             (cd ui && ([ -d node_modules ] || npm install --no-audit --no-fund) && npm run check && npm run build)
         fi
         ;;
     D)
         python3 scripts/wartownik_stalych.py
         cargo test -p simon-core -p simon-verify-wasm
-        cargo clippy -p simon-core -p simon-verify-wasm -- -D warnings
+        cargo clippy -p simon-core -p simon-verify-wasm --all-targets -- -D warnings
         ;;
-    E)
+    E|J)
         python3 scripts/wartownik_stalych.py
         cargo test -p simon-node -p simon-cli
-        cargo clippy -p simon-node -p simon-cli -- -D warnings
+        cargo clippy -p simon-node -p simon-cli --all-targets -- -D warnings
         ;;
-    F)
-        python3 -m py_compile tools/simon-api/simon_api.py tools/simon-verifier/verifier_loop.py demo/app.py demo/app.en.py
+    F|N)
+        if [[ "$TRACK" == "F" ]]; then
+            python3 -m py_compile tools/simon-api/simon_api.py tools/simon-verifier/verifier_loop.py demo/app.py demo/app.en.py
+        fi
         if [ -d "ui" ]; then
             (cd ui && ([ -d node_modules ] || npm install --no-audit --no-fund) && npm run check && npm run build)
         fi
+        ;;
+    L)
+        python3 -m py_compile tools/simon-api/simon_api.py tools/simon-api/test_gateway.py tools/simon-monitor/simon_monitor.py
+        python3 tools/simon-api/test_gateway.py
+        python3 tools/simon-api/simon_api.py --selfcheck
+        python3 tools/simon-monitor/simon_monitor.py --selfcheck
         ;;
     G|I)
         python3 scripts/wartownik_stalych.py

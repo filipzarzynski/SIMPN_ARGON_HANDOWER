@@ -7,44 +7,53 @@ HUB_REPO="$HANDOVER_ROOT/workspaces/_upstream_hub.git"
 FORK_URL="https://github.com/filipzarzynski/SIMON.git"
 UPSTREAM_URL="https://github.com/Szpili/SIMON.git"
 
-echo "=== 1. Fetching latest upstream main from $UPSTREAM_URL ==="
-git -C "$HUB_REPO" fetch upstream main
+echo "=== 1. Fetching latest upstream main & fz-contrib from $UPSTREAM_URL ==="
+git -C "$HUB_REPO" fetch upstream "+refs/heads/main:refs/remotes/upstream/main" "+refs/heads/fz-contrib:refs/remotes/upstream/fz-contrib"
 
-UPSTREAM_HEAD="$(git -C "$HUB_REPO" rev-parse refs/remotes/upstream/main)"
-echo "Upstream main HEAD is: $UPSTREAM_HEAD"
+UPSTREAM_MAIN="$(git -C "$HUB_REPO" rev-parse refs/remotes/upstream/main)"
+UPSTREAM_FZC="$(git -C "$HUB_REPO" rev-parse refs/remotes/upstream/fz-contrib)"
+echo "Upstream main HEAD       : $UPSTREAM_MAIN"
+echo "Upstream fz-contrib HEAD : $UPSTREAM_FZC"
 
 echo "=== 2. Current branches on hub ready for remote ==="
 git -C "$HUB_REPO" log -n 1 --oneline fz-contrib
-git -C "$HUB_REPO" log -n 1 --oneline fz/track-D-core-security-hardening
-git -C "$HUB_REPO" log -n 1 --oneline fz/track-A-node-receipt-truth
-git -C "$HUB_REPO" log -n 1 --oneline fz/track-F-submission-and-ui-polish
-git -C "$HUB_REPO" log -n 1 --oneline fz/track-C-industry-m7-agent
-git -C "$HUB_REPO" log -n 1 --oneline fz/track-E-coordinator-gossipsub-bridge
-git -C "$HUB_REPO" log -n 1 --oneline fz/track-B-live-m1-receipts
 
-echo "=== 3. Pushing fz-contrib and all completed track branches to $FORK_URL ==="
+ALL_TRACK_BRANCHES=(
+    "fz/track-H-e2e-integration-and-live-m1-bridge"
+    "fz/track-J-signed-job-result-and-registration"
+    "fz/track-G-architecture-and-docs-overhaul"
+    "fz/track-I-captain-cherry-pick-menu-and-ci"
+    "fz/track-K-vpn-attack-harness-and-agent-m1-gate"
+    "fz/track-L-gateway-and-monitor-hardening"
+    "fz/track-M-industry-adversarial-corpus"
+    "fz/track-N-ui-receipts-and-demo-polish"
+)
+
+ACTIVE_BRANCHES=()
+for br in "${ALL_TRACK_BRANCHES[@]}"; do
+    if git -C "$HUB_REPO" show-ref --verify --quiet "refs/heads/$br"; then
+        git -C "$HUB_REPO" log -n 1 --oneline "$br"
+        ACTIVE_BRANCHES+=("$br")
+    fi
+done
+
+echo "=== 3. Pushing fz-contrib and completed Stage 2/3 track branches to $FORK_URL ==="
 TOKEN="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
 
 if [ -n "$TOKEN" ]; then
     AUTH_FORK_URL="https://x-access-token:${TOKEN}@github.com/filipzarzynski/SIMON.git"
-    git -C "$HUB_REPO" push -f "$AUTH_FORK_URL" fz-contrib:refs/heads/fz-contrib
-    git -C "$HUB_REPO" push -f "$AUTH_FORK_URL" fz/track-D-core-security-hardening:refs/heads/fz/track-D-core-security-hardening
-    git -C "$HUB_REPO" push -f "$AUTH_FORK_URL" fz/track-A-node-receipt-truth:refs/heads/fz/track-A-node-receipt-truth
-    git -C "$HUB_REPO" push -f "$AUTH_FORK_URL" fz/track-F-submission-and-ui-polish:refs/heads/fz/track-F-submission-and-ui-polish
-    git -C "$HUB_REPO" push -f "$AUTH_FORK_URL" fz/track-C-industry-m7-agent:refs/heads/fz/track-C-industry-m7-agent
-    git -C "$HUB_REPO" push -f "$AUTH_FORK_URL" fz/track-E-coordinator-gossipsub-bridge:refs/heads/fz/track-E-coordinator-gossipsub-bridge
-    git -C "$HUB_REPO" push -f "$AUTH_FORK_URL" fz/track-B-live-m1-receipts:refs/heads/fz/track-B-live-m1-receipts
+    git -C "$HUB_REPO" push "$AUTH_FORK_URL" fz-contrib:refs/heads/fz-contrib
+    for br in "${ACTIVE_BRANCHES[@]}"; do
+        git -C "$HUB_REPO" push -f "$AUTH_FORK_URL" "$br:refs/heads/$br"
+    done
     echo "SUCCESS: All branches pushed to $FORK_URL"
+elif git -C "$HUB_REPO" push origin fz-contrib:refs/heads/fz-contrib 2>/dev/null; then
+    for br in "${ACTIVE_BRANCHES[@]}"; do
+        git -C "$HUB_REPO" push -f origin "$br:refs/heads/$br"
+    done
+    echo "SUCCESS: All branches pushed to origin ($FORK_URL)"
 else
-    echo "Notice: No GITHUB_TOKEN or GH_TOKEN found in environment."
+    echo "Notice: Could not push automatically to $FORK_URL."
     echo "To push with credentials, run:"
     echo "  GITHUB_TOKEN=<your_github_pat> bash scripts/sync_and_push_remote.sh"
-    echo "Or if your terminal has git credentials configured, run:"
-    echo "  git -C \"$HUB_REPO\" push fork fz-contrib:refs/heads/fz-contrib"
-    echo "  git -C \"$HUB_REPO\" push fork fz/track-D-core-security-hardening"
-    echo "  git -C \"$HUB_REPO\" push fork fz/track-A-node-receipt-truth"
-    echo "  git -C \"$HUB_REPO\" push fork fz/track-F-submission-and-ui-polish"
-    echo "  git -C \"$HUB_REPO\" push fork fz/track-C-industry-m7-agent"
-    echo "  git -C \"$HUB_REPO\" push fork fz/track-E-coordinator-gossipsub-bridge"
-    echo "  git -C \"$HUB_REPO\" push fork fz/track-B-live-m1-receipts"
 fi
