@@ -1,0 +1,158 @@
+# 08 — Team Sync Executive Brief: Current Architecture vs. Stage 2 & Stage 3 Waves
+
+**Baseline Commit (`fz-contrib`):** `1d71e6d` (merges `upstream/main` `5854038` + `upstream/fz-contrib` `53854d2` — post-Stage 1 Captain & Claude Opus 5.5 review)  
+**Companion Architecture Doc:** [`01_ARCHITECTURE_AND_DATA_FLOWS.md`](./01_ARCHITECTURE_AND_DATA_FLOWS.md)  
+**Stage 1 Post-Mortem:** [`07_STAGE1_CAPTAIN_REVIEW_POSTMORTEM.md`](./07_STAGE1_CAPTAIN_REVIEW_POSTMORTEM.md)  
+**Purpose:** Single-document executive and technical briefing for the hackathon team call. Grounded 100% in the actual source code, this document separates:
+* `[LIVE NOW — Post-Stage 1 (1d71e6d)]` — What is currently implemented, tested, and running in the repository right now.
+* `[STAGE 2 — Wave 2A (Tracks H, J)]` — Urgent protocol & security closing items from the Captain's [`docs/STRESS-TESTS.md`](file:///home/agent/SIMON/docs/STRESS-TESTS.md) `## Next` list (`#1` Signed `JobResult`, `#2` Live M1 token binding with `MAX_M1_TOKENS`, `#3` Signed `RegisterMsg` + operator vouching + Sybil tests).
+* `[STAGE 2 — Wave 2B (Tracks G, I)]` — Upstream `docs/ARCHITECTURE.md`, `STRESS-TESTS.md` rows 7/17/18 update, and one-command Captain verification gate (`scripts/verify_all_fast.sh` + cherry-pick menu).
+* `[STAGE 3 — Wave 3A (Tracks K, L)]` — `STRESS-TESTS.md` `Next #4` prepared VPN target network attack harness (`vpn_attack_harness.rs`), client M1 missing-token gate, and `simon_api.py` / `simon_monitor.py` hardening.
+* `[STAGE 3 — Wave 3B (Tracks M, N)]` — Industry NFKC/link/role guardrail parity across `tickets.py` & `agent_triage.py` (`stress_corpus.json` expanded 17 $\rightarrow$ 25 cases) and UI `/receipts` + `/demo` polish.
+
+---
+
+## 1. Executive 60-Second Brief for the Team Call
+
+### 1.1 Strategic Framing & Deployment Boundary
+Following the Oct 15–16 team call and Captain review ([`docs/THREAT-MODEL.md`](file:///home/agent/SIMON/docs/THREAT-MODEL.md), [`docs/STRESS-TESTS.md`](file:///home/agent/SIMON/docs/STRESS-TESTS.md)):
+1. **What SIMON Is:** A **verifiable inference-result publication** layer (cryptographic non-repudiation of *who* signed *which* output for *which* input and *which declared* model/parameters), combined with deterministic **policy/capability ceilings (M7)** and empirical **canary/drift probes (M3, `CANARY-7`, verifier pilot)**. It is **not** a cryptographic proof of model execution (which requires a hardware TEE).
+2. **Primary Target Deployment:** A **company or machining plant running SIMON across ~5 machines inside its own VPN**, where one participant (an employee, a compromised GPU node, or a gateway) may turn dishonest or suffer silent hardware weight corruption (e.g., consumer RTX 3090 without ECC memory).
+
+### 1.2 Current Codebase vs. Stage 2 & Stage 3 Wave Matrix
+
+| Architectural Subsystem | `[LIVE NOW — Post-Stage 1 (1d71e6d)]` (Already in Repo) | `[STAGE 2 — Waves 2A & 2B]` (Next Up — Priority 1) | `[STAGE 3 — Waves 3A & 3B]` (If Time Permits — Priority 2) |
+| :--- | :--- | :--- | :--- |
+| **1. Point-to-Point Inference & Receipts (`node.rs` $\leftrightarrow$ `agent.rs`)** | • Real `started_at_us`/`finished_at_us` timestamps<br>• Honest `Precision::{Fp16, Bf16, Fp8, Fp4, Int8, Int4, Unknown}` (no guessing)<br>• `llama.cpp` `/props` & `/tokenize` support<br>• Per-peer replay cache (`4096` jobs) & token-bucket rate limiter (`--rate-per-peer 16/s`)<br>• Key pinning (`--expect-signer`, `signer_pinned`)<br>• **Gap:** Live node still emits **Level 0** receipts (`wiazania: None`) | **`[Wave 2A — Track H]`** (`STRESS-TESTS.md` Next #2):<br>• `node.rs` calls `wspolne::tokenizuj_tekst` on prompt & output, builds `WiazaniaM1` (**Live Proof Level 1**), and returns token IDs in `PromptResponse`<br>• Enforces `MAX_M1_TOKENS = 65_536` cap on both `/tokenize` and `zweryfikuj_m1`<br>• Adds in-process `e2e_m1_receipt.rs` test | **`[Wave 3A — Track K]`** (`STRESS-TESTS.md` Next #4):<br>• Fixes `agent.rs::zweryfikuj_receipt` so a receipt claiming Level 1 (`poziom() >= 1`) without token arrays (`m1.is_none()`) is **rejected** instead of silently passing as Level 0<br>• Populates `prompt_commitment` & `tokenizer_manifest_hash` in `RekordPracyV1` |
+| **2. P2P Coordinator, Gossipsub & Node Registry (`coord.rs`, `simon-node`)** | • `Registry::wybierz_kandydata_vrf` deterministic SHA-256 selection<br>• `coord.rs` subscribes to `TOPIC_JOB_RESULT`, checks `assigned_node == Some(node_id)` before `mark_degraded`, and calls `complete_job` on failure<br>• **Gap 1:** `JobResult` on gossip is **unsigned** (anyone who knows `(job_id, node_id)` can forge a failure)<br>• **Gap 2:** `RegisterMsg` on gossip is **unsigned** (Sybil nodes can flood `Registry`) | **`[Wave 2A — Track J]`** (`STRESS-TESTS.md` Next #1 & #3):<br>• Adds `SignedJobResult` (`SIMON/JOB-RESULT/v1`, Ed25519-signed by node key for **both successes and failures**)<br>• Adds Ed25519 signature (`SIMON/NODE-REGISTER/v1`) + optional `NodeVoucher` (`SIMON/NODE-VOUCH/v1`) to `RegisterMsg`<br>• Coordinator flags `--node-key` & `--require-voucher` + Sybil flood test | **`[Wave 3A — Track K]`** (`STRESS-TESTS.md` Next #4):<br>• Adds `crates/simon-cli/tests/vpn_attack_harness.rs`: spins up an in-process target network and runs 7 automated red-team attacks mapped to `STRESS-TESTS.md` rows 1–7, 17, 18 |
+| **3. OpenAI HTTP Gateway & Network Monitor (`simon-api`, `simon-monitor`)** | • `simon_api.py` passes `--expect-signer` from `nodes.json`, checks `SIMON_API_KEY` via SHA-256 `hmac.compare_digest`, returns `503` + `Retry-After: 5` on `node_zajety`/`rate_limit`, and reports `proof_level` from `poziom_sprawdzony`<br>• `simon_monitor.py` tracks GPU stats, `CANARY-7` age, and per-node jobs | **`[Wave 2B — Track I]`**:<br>• Adds `scripts/verify_all_fast.sh` running all Rust tests, Clippy `--all-targets`, Python `.selfcheck()` suites, and guardrail greps in <30s | **`[Wave 3A — Track L]`**:<br>• Enforces `MAX_BODY_BYTES = 1 MiB` (`413`) in `simon_api.py` (blocks memory DoS) & logs `signer_pinned` to `SIMON_API_JOBLOG`<br>• Bounds `fetch_stats` in `simon_monitor.py` (`http/https` only, 64 KiB max) & tracks `verified_m1_jobs` / `pinned_jobs` |
+| **4. Track 1 Intelligent Industry (`tools/simon-industry/`)** | • `rules.py` deterministic physics rules (`8 ms`, 0 tokens) + per-mode `CHECKS` catalog<br>• `tickets.py` checks step IDs against `rules.CHECKS`, strips model `evidence`, checks 17-case `stress_corpus.json`<br>• `agent_triage.py` locks `failure_modes`, `urgency`, `action_code`, `part_id` to `rules.findings(row)[0]`, normalizes Unicode (`NFKC` + `Cf` strip + dashes), and cleans CSV IDs<br>• **Gap:** `tickets.py` lacks `_znormalizuj` (`NFKC`/`Cf`), and `agent_triage.py` lacks `tickets.py`'s `LINKS` / `ROLE` / `URGENT` checks | **`[Wave 2B — Track G]`**:<br>• Documents the end-to-end Industry + M7 pipeline and claim hierarchy in `docs/ARCHITECTURE.md` | **`[Wave 3B — Track M]`**:<br>• Applies `_znormalizuj` (`NFKC` + `Cf` strip + dash collapse) to `tickets.py`<br>• Adds `LINKS` (including bare domains), `ROLE`, and `URGENT` checks to `agent_triage.py`<br>• Expands `stress_corpus.json` from **17 $\rightarrow$ 25 cases** |
+| **5. Web UI (`ui/`) & Documentation (`docs/`)** | • Routes: `/`, `/demo`, `/network`, `/industry`, and new `/receipts` (`What a receipt proves`)<br>• `/industry` shows `plant-listed node` vs `unknown node` + `rules + checks` vs `held for review`<br>• 390px mobile overflow fixed + `type="button"` / `aria-pressed` on `NodePanel` & `VerifierPanel` | **`[Wave 2B — Track G & Track I]`**:<br>• Creates `docs/ARCHITECTURE.md` & `docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md`<br>• Updates `docs/STRESS-TESTS.md` rows 7, 17, 18 & `## Honest limits` | **`[Wave 3B — Track N]`**:<br>• Adds Level 0 / Level 1 / M3 / M7 claim-label reference table to `/receipts`<br>• Adds **Tamper Client Nonce (Replay Attack)** button (`STRESS-TESTS.md` Row 4) + `aria-pressed` semantics to `/demo` |
+
+---
+
+## 2. High-Level System Topology (Current State + Stage 2/3 Overlays)
+
+```mermaid
+flowchart TB
+    subgraph UI_Layer["1. Presentation & Browser WASM Verification Layer (ui/)"]
+        SvelteUI["ui/ (SvelteKit 5 Static App) | LIVE: /, /demo, /network, /industry, /receipts | STAGE 3 (Track N): /receipts claim table + /demo nonce-replay tamper"]
+        WASM["crates/simon-verify-wasm | LIVE: verify_self + zgodny_z_wyjsciem + weryfikuj_m1 + ocena_m3 (rejects null sigs, simulated M3, NaN logprobs)"]
+        Streamlit["demo/app.en.py & app.py | LIVE: Streamlit CLI wrapper (argv -- separator)"]
+    end
+
+    subgraph Gateway_Tools["2. Python Gateways, Industry & Probing Tools (tools/)"]
+        Industry["tools/simon-industry/ | LIVE: rules.py + tickets.py (17-case corpus) + agent_triage.py (NFKC/Cf) | STAGE 3 (Track M): NFKC/Cf in tickets.py + LINKS/ROLE in agent_triage.py + 25-case corpus"]
+        API["tools/simon-api/simon_api.py (:18600) | LIVE: --expect-signer, SHA-256 Bearer auth, 503 Retry-After, poziom_dowodu | STAGE 3 (Track L): 1 MiB body limit (413) + signer_pinned joblog + --selfcheck"]
+        Monitor["tools/simon-monitor/simon_monitor.py (:8081) | LIVE: nvidia-smi / stats_url + CANARY-7 age + joblog tail | STAGE 3 (Track L): 64 KiB http/https stats cap + M1/pinned totals + --selfcheck"]
+        Probes["Empirical Probes & Guard | LIVE: simon-canary (CANARY-7), simon-verifier, simon-lidar (onetoken.py), simon-guard (:19301)"]
+    end
+
+    subgraph Rust_Workspace["3. Rust Core & P2P Workspace (crates/)"]
+        CLI_Agent["simon --role agent (agent.rs) | LIVE: P2P /simon/prompt/1.0.0, --expect-signer, poziom_sprawdzony, order.nonce | STAGE 3 (Track K): Reject Level 1 receipt if token arrays missing + vpn_attack_harness.rs"]
+        CLI_Node["simon --role node (node.rs) | LIVE: Real timestamps_us, honest Precision, /props, 4096 replay cache, --rate-per-peer | STAGE 2 (Track H): Live M1 tokenization (/tokenize) + WiazaniaM1 + MAX_M1_TOKENS=65536"]
+        CLI_Coord["simon --role coord (coord.rs + simon-node) | LIVE: VRF candidate selection, assigned-node mark_degraded, complete_job on failure | STAGE 2 (Track J): SignedJobResult (SIMON/JOB-RESULT/v1) + signed RegisterMsg & NodeVoucher"]
+        Core["crates/simon-core & simon-harness | LIVE: Ed25519, Receipt, WiazaniaM1, m3, cap (Sufit/Zezwolenie), web (IPv4/IPv6/CGNAT SSRF)"]
+    end
+
+    subgraph Hardware_Backends["4. LLM Inference Backends"]
+        RTX3090["Plant Node 1: Local RTX 3090 (24 GB) - llama-server / vLLM (gemma-4-26b-a4b-it-qat-q4_0)"]
+        MI300X["Plant Node 2: AMD Instinct MI300X (192 GB, ROCm 7.2.3) - vLLM 0.27.1 (gemma-4-26b-a4b-it-bf16 / Qwen3.8-27B 64 streams @ ~2000 tok/s)"]
+    end
+
+    SvelteUI --> WASM
+    WASM --> Core
+    SvelteUI -. "Polls /api/monitor" .-> Monitor
+    Industry -- "POST /v1/chat/completions" --> API
+    API -- "spawns subprocess (--request-file -)" --> CLI_Agent
+    CLI_Agent -- "libp2p Noise /simon/prompt/1.0.0" --> CLI_Node
+    CLI_Node -. "Gossipsub simon/v1/*" .-> CLI_Coord
+    CLI_Node -- "HTTP /v1/chat/completions + /tokenize + /props" --> RTX3090
+    CLI_Node -- "HTTP /v1/chat/completions + /tokenize + /props" --> MI300X
+```
+
+---
+
+## 3. Data Flow A: Point-to-Point Inference & Receipt Pipeline (`simon_api.py` $\leftrightarrow$ `agent.rs` $\leftrightarrow$ `node.rs`)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as simon_api.py / tickets.py
+    participant Agent as simon --role agent (agent.rs)
+    participant Node as simon --role node (node.rs)
+    participant LLM as vLLM / llama-server (:8000 / :18020)
+
+    Client->>Agent: Spawn with --request-file - (stdin JSON) + --expect-signer <node_id> [LIVE NOW]
+    Note over Client: [STAGE 3 - Wave 3A / Track L] Enforce MAX_BODY_BYTES = 1 MiB (HTTP 413) before reading request
+    Note over Agent: Load 0600 identity (~/.simon/api-client.id), build JobOrder with fresh 128-bit nonce & sign Autoryzacja
+    Agent->>Node: Dial --bootstrap Multiaddr over libp2p (TCP + Noise + Yamux) & send PromptRequest (CBOR /simon/prompt/1.0.0)
+
+    Note over Node: [LIVE NOW] Per-Peer Admission Gate: check (peer, job_id) in 4096-entry replay ring, check --rate-per-peer token bucket, acquire semaphores
+
+    Node->>LLM: Startup / cached probe: GET /v1/models & GET /props -> detect vLLM vs llama.cpp runtime & whole-token Precision [LIVE NOW]
+    Node->>LLM: POST /tokenize -> Context gate C+1: reject ctx_ponad_limit if realny_ctx > max_ctx
+
+    Node->>LLM: POST /v1/chat/completions (messages, tools, temp, max_tokens)
+    LLM-->>Node: HTTP 200 JSON (choices[0].message, usage, started/finished_at_us)
+
+    rect rgb(30, 55, 40)
+        Note over Node,LLM: [STAGE 2 - Wave 2A / Track H] (STRESS-TESTS.md Next #2 — Live M1 Wiring): Call wspolne::tokenizuj_tekst on prompt & output (capped at MAX_M1_TOKENS = 65_536) and attach Receipt::z_wiazaniem_m1 before .sign(&klucz)
+    end
+
+    Node-->>Agent: PromptReply::Ok(PromptResponse { output, receipt, tokenizer_hash, prompt_token_ids, output_token_ids })
+
+    Note over Agent: [LIVE NOW] Client Verification: verify_self() + podpisal_oczekiwany(--expect-signer) + zgodny_z_wyjsciem(output) + zweryfikuj_m1(order.nonce) -> poziom_sprawdzony
+    Note over Agent: [STAGE 3 - Wave 3A / Track K] Reject if r.poziom() >= 1 but M1 token arrays are missing
+
+    Agent-->>Client: Stdout JSON (ok, output, receipt, poziom_dowodu, signer_pinned)
+```
+
+---
+
+## 4. Data Flow B: Gossipsub Coordinator & Node Registry (`coord.rs` & `simon-node`)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Op as Plant Operator Key (--trusted-voucher)
+    participant Node as simon --role node (node.rs)
+    participant Gossip as libp2p Gossipsub (simon/v1/*)
+    participant Coord as simon --role coord (coord.rs)
+
+    rect rgb(30, 45, 65)
+        Note over Op,Coord: [STAGE 2 - Wave 2A / Track J] (STRESS-TESTS.md Next #3 — Signed Registration & Vouching)
+        Op->>Node: Optional offline/config NodeVoucher signed under SIMON/NODE-VOUCH/v1
+        Node->>Gossip: Publish signed RegisterMsg (SIMON/NODE-REGISTER/v1) with node_pubkey, timestamp_us, signature, voucher
+        Gossip->>Coord: obsluz_rejestracje(dane)
+        Note over Coord: Verify RegisterMsg::verify_signature() and (if --require-voucher) msg.verify_voucher(&trusted_vouchers) before Registry::register()
+    end
+
+    Gossip->>Coord: JobOrder on simon/v1/job-order
+    Note over Coord: [LIVE NOW] Verify order.zweryfikuj_autoryzacje(teraz), select node via wybierz_kandydata_vrf(model, vrf_seed), record rejestr.assign(job_id, winner.node_id)
+    Coord->>Gossip: Publish signed OrderAccepted to simon/v1/order-accepted
+
+    rect rgb(30, 55, 40)
+        Note over Node,Coord: [STAGE 2 - Wave 2A / Track J] (STRESS-TESTS.md Next #1 — SignedJobResult)
+        Node->>Gossip: Publish SignedJobResult (SIMON/JOB-RESULT/v1) signed by node Ed25519 key (for both ok=true and ok=false)
+        Gossip->>Coord: obsluz_wynik(dane)
+        Note over Coord: Look up assigned_node & expected_pubkey, verify SignedJobResult::verify(&expected_pubkey), then complete_job (or mark_degraded + complete_job on signed failure)
+    end
+```
+
+---
+
+## 5. Complete Stage 2 & Stage 3 Wave Roadmap (For Team Call Agenda)
+
+All tracks branch off **`fz-contrib` (`1d71e6d`)** and open PRs targeting **`fz-contrib`** (never `main`), with atomic `[FZ-<Track><N>]` commits so the Team Captain (`Szpili`) can cherry-pick individual commits or merge `fz-contrib` in one click.
+
+| Stage & Wave | Track | Tag | Branch (`-> fz-contrib`) | Exclusive Files Touched | Exact Deliverable & `STRESS-TESTS.md` Mapping |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Stage 2 — Wave 2A**<br>*(Urgent Protocol & Security)* | **Track H** | `[FZ-H]` | `fz/track-H-e2e-integration-and-live-m1-bridge` | `crates/simon-cli/src/wspolne.rs`<br>`crates/simon-cli/src/node.rs`<br>`crates/simon-cli/tests/e2e_m1_receipt.rs` | **`STRESS-TESTS.md` Next #2:** Wires live M1 token chain in `node.rs` via `/tokenize`, enforces `MAX_M1_TOKENS = 65_536` cap in `wspolne.rs` & `node.rs`, and adds in-process E2E test (`e2e_m1_receipt.rs`). |
+| **Stage 2 — Wave 2A**<br>*(Urgent Protocol & Security)* | **Track J** | `[FZ-J]` | `fz/track-J-signed-job-result-and-registration` | `crates/simon-node/src/lib.rs`<br>`crates/simon-cli/src/coord.rs` | **`STRESS-TESTS.md` Next #1 & #3:** Signs `JobResult` (`SIMON/JOB-RESULT/v1`, failures too) with node key; signs `RegisterMsg` (`SIMON/NODE-REGISTER/v1`) + `NodeVoucher` (`SIMON/NODE-VOUCH/v1`); adds Sybil flood tests. |
+| **Stage 2 — Wave 2B**<br>*(Docs & Captain Fast-Gate)* | **Track G** | `[FZ-G]` | `fz/track-G-architecture-and-docs-overhaul` | `docs/ARCHITECTURE.md`<br>`docs/STRESS-TESTS.md`<br>`docs/THREAT-MODEL.md`<br>`ROADMAP.md`<br>`docs/whitepaper/SIMON-whitepaper-EN.md` | Creates `docs/ARCHITECTURE.md` in upstream repo, updates `docs/STRESS-TESTS.md` rows 7/17/18 and `## Honest limits`, and aligns `THREAT-MODEL.md` & `ROADMAP.md`. |
+| **Stage 2 — Wave 2B**<br>*(Docs & Captain Fast-Gate)* | **Track I** | `[FZ-I]` | `fz/track-I-captain-cherry-pick-menu-and-ci` | `scripts/verify_all_fast.sh`<br>`docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md` | Adds `<30s` full-stack verification & Captain guardrail script (`scripts/verify_all_fast.sh`) and generates `docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md`. |
+| **Stage 3 — Wave 3A**<br>*(Attack Harness & Gateway)* | **Track K** | `[FZ-K]` | `fz/track-K-vpn-attack-harness-and-agent-m1-gate` | `crates/simon-cli/src/agent.rs`<br>`crates/simon-cli/tests/vpn_attack_harness.rs` | **`STRESS-TESTS.md` Next #4:** Prepared VPN target network attack harness (`vpn_attack_harness.rs`) reproducing rows 1–7, 17, 18 + fixes `agent.rs` to reject Level 1 receipts missing token arrays. |
+| **Stage 3 — Wave 3A**<br>*(Attack Harness & Gateway)* | **Track L** | `[FZ-L]` | `fz/track-L-gateway-and-monitor-hardening` | `tools/simon-api/simon_api.py`<br>`tools/simon-api/test_gateway.py`<br>`tools/simon-monitor/simon_monitor.py` | Enforces `1 MiB` HTTP body cap (`413`) and logs `signer_pinned` in `simon_api.py`; caps `fetch_stats` (`http/https`, 64 KiB) and tracks M1/pinned totals in `simon_monitor.py`; adds `--selfcheck` to both. |
+| **Stage 3 — Wave 3B**<br>*(Industry Corpus & UI)* | **Track M** | `[FZ-M]` | `fz/track-M-industry-adversarial-corpus` | `tools/simon-industry/tickets.py`<br>`tools/simon-industry/agent_triage.py`<br>`tools/simon-industry/stress_corpus.json` | Brings `tickets.py` and `agent_triage.py` to 100% guardrail parity (`_znormalizuj` NFKC + `Cf` strip in `tickets.py`; `LINKS`/`ROLE`/`URGENT` in `agent_triage.py`) and expands `stress_corpus.json` from 17 to 25 cases. |
+| **Stage 3 — Wave 3B**<br>*(Industry Corpus & UI)* | **Track N** | `[FZ-N]` | `fz/track-N-ui-receipts-and-demo-polish` | `ui/src/routes/receipts/+page.svelte`<br>`ui/src/routes/demo/+page.svelte` | Adds Level 0 / Level 1 / M3 / M7 claim-label reference table to `/receipts` and adds client-nonce replay tamper preset (`STRESS-TESTS.md` Row 4) + `aria-pressed` semantics to `/demo`. |

@@ -22,28 +22,28 @@ We have baked all 7 lessons from those 22 commits directly into:
 
 ```mermaid
 flowchart TD
-    Main["Szpili/SIMON: upstream/main (5854038)<br/>+ upstream/fz-contrib (53854d2)"]
-    FZ["fz-contrib (1d71e6d)<br/>(Shared Staging & PR Base Branch — NEVER PR to main)"]
+    Main["Szpili/SIMON: upstream/main (5854038) + upstream/fz-contrib (53854d2)"]
+    FZ["fz-contrib (1d71e6d) — Shared Staging & PR Base Branch (NEVER PR to main)"]
     Main --> FZ
 
     subgraph Wave2A["Stage 2 — Wave 2A: Urgent Protocol & Security Closing (Run First in Parallel)"]
-        TH["Track H [FZ-H]<br/>fz/track-H-e2e-integration-and-live-m1-bridge<br/>STRESS-TESTS Next #2: Live M1 token binding + MAX_M1_TOKENS cap + E2E test"]
-        TJ["Track J [FZ-J]<br/>fz/track-J-signed-job-result-and-registration<br/>STRESS-TESTS Next #1 & #3: SignedJobResult + RegisterMsg + NodeVoucher + Sybil test"]
+        TH["Track H [FZ-H] (fz/track-H-e2e-integration-and-live-m1-bridge): STRESS-TESTS Next #2 — Live M1 token binding + MAX_M1_TOKENS cap + E2E test"]
+        TJ["Track J [FZ-J] (fz/track-J-signed-job-result-and-registration): STRESS-TESTS Next #1 & #3 — SignedJobResult + RegisterMsg + NodeVoucher + Sybil test"]
     end
 
     subgraph Wave2B["Stage 2 — Wave 2B: Architecture, Stress-Test Matrix & Captain Fast-Gate (Run Second in Parallel)"]
-        TG["Track G [FZ-G]<br/>fz/track-G-architecture-and-docs-overhaul<br/>docs/ARCHITECTURE.md + STRESS-TESTS.md rows 7/17/18 + THREAT-MODEL.md"]
-        TI["Track I [FZ-I]<br/>fz/track-I-captain-cherry-pick-menu-and-ci<br/>scripts/verify_all_fast.sh + docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md"]
+        TG["Track G [FZ-G] (fz/track-G-architecture-and-docs-overhaul): docs/ARCHITECTURE.md + STRESS-TESTS.md rows 7/17/18 + THREAT-MODEL.md"]
+        TI["Track I [FZ-I] (fz/track-I-captain-cherry-pick-menu-and-ci): scripts/verify_all_fast.sh + docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md"]
     end
 
     subgraph Wave3A["Stage 3 — Wave 3A: Adversarial VPN Target Network & Gateway Hardening (If Time Permits)"]
-        TK["Track K [FZ-K]<br/>fz/track-K-vpn-attack-harness-and-agent-m1-gate<br/>STRESS-TESTS Next #4: vpn_attack_harness.rs + agent.rs M1 missing-token gate"]
-        TL["Track L [FZ-L]<br/>fz/track-L-gateway-and-monitor-hardening<br/>simon_api.py 1 MiB cap + signer_pinned log + simon_monitor.py bounded stats"]
+        TK["Track K [FZ-K] (fz/track-K-vpn-attack-harness-and-agent-m1-gate): STRESS-TESTS Next #4 — vpn_attack_harness.rs + agent.rs M1 missing-token gate"]
+        TL["Track L [FZ-L] (fz/track-L-gateway-and-monitor-hardening): simon_api.py 1 MiB cap + signer_pinned log + simon_monitor.py bounded stats"]
     end
 
     subgraph Wave3B["Stage 3 — Wave 3B: Industry 25-Case Stress Corpus & UI /receipts + /demo Polish (If Time Permits)"]
-        TM["Track M [FZ-M]<br/>fz/track-M-industry-adversarial-corpus<br/>tickets.py NFKC/Cf parity + agent_triage.py link/role guards + 25-case corpus"]
-        TN["Track N [FZ-N]<br/>fz/track-N-ui-receipts-and-demo-polish<br/>/receipts claim-label table + /demo client-nonce replay tamper & aria-pressed"]
+        TM["Track M [FZ-M] (fz/track-M-industry-adversarial-corpus): tickets.py NFKC/Cf parity + agent_triage.py link/role guards + 25-case corpus"]
+        TN["Track N [FZ-N] (fz/track-N-ui-receipts-and-demo-polish): /receipts claim-label table + /demo client-nonce replay tamper & aria-pressed"]
     end
 
     FZ --> Wave2A

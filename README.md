@@ -33,6 +33,7 @@ See [`parallel_agents/ORCHESTRATOR_GUIDE.md`](file:///home/agent/SIMPN_ARGON_HAN
 5. **[`04_CLAIMS_VS_REALITY_MATRIX.md`](file:///home/agent/SIMPN_ARGON_HANDOWER/04_CLAIMS_VS_REALITY_MATRIX.md)** — Claim-by-claim verification table (`C1`–`C9`) and Master Catalog of **16 concrete bugs and security vulnerabilities (`BUG-01` through `BUG-16`)** with exact file and line numbers.
 6. **[`05_HACKATHON_ROADMAP_AND_PR_CATALOG.md`](file:///home/agent/SIMPN_ARGON_HANDOWER/05_HACKATHON_ROADMAP_AND_PR_CATALOG.md)** — Master Track Catalog (`Tracks A` through `N`) across Stage 1 (completed), Stage 2 (`Waves 2A & 2B`), and Stage 3 (`Waves 3A & 3B`).
 7. **[`07_STAGE1_CAPTAIN_REVIEW_POSTMORTEM.md`](file:///home/agent/SIMPN_ARGON_HANDOWER/07_STAGE1_CAPTAIN_REVIEW_POSTMORTEM.md)** — Comprehensive commit-by-commit post-mortem of the 22 review/fix commits made by `Szpili` and Claude Opus 5.5 when merging Stage 1 (`PR #8`), and how those 7 failure patterns are prevented in Stage 2 and Stage 3.
+8. **[`08_TEAM_SYNC_ARCHITECTURE_AND_WAVE_BRIEF.md`](file:///home/agent/SIMPN_ARGON_HANDOWER/08_TEAM_SYNC_ARCHITECTURE_AND_WAVE_BRIEF.md)** — Team sync call executive brief mapping current live architecture (`1d71e6d`) against Stage 2 (`Waves 2A & 2B`) and Stage 3 (`Waves 3A & 3B`) changes.
 
 ---
 
