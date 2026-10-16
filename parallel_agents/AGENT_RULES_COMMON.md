@@ -24,6 +24,13 @@ Every agent working on a SIMON feature branch MUST follow these rules without ex
    * Never pass `f32`/`f64` inside any struct hashed by `simon_core::content_digest`. Always use scaled integers (`u64`/`i64`).
 6. **Preserve Documentation Integrity:**
    * Do not delete existing comments or docstrings unless updating an explicitly inaccurate doc comment noted in your `TASK_SPEC.md`.
+7. **Strict Mermaid Diagram Syntax Rules for Documentation ([`simon-mermaid-validator`](../.agents/skills/simon-mermaid-validator/SKILL.md)):**
+   * Always quote flowchart node labels containing special characters, parentheses, brackets, or commas: `id["Label (Extra Info)"]`.
+   * Never use semicolons `;` inside `sequenceDiagram` `Note over ...:` text or message labels (in Mermaid, `;` terminates the statement and causes the parser to treat following words as arrow operators).
+   * Never use unescaped arrows (`->`, `-->`, `--`, `->>`) inside sequence diagram note text (use `yields`, `sending`, or `to`).
+   * Never use angle-bracket placeholders (`<pubkey>`, `<node_id>`) in Mermaid diagrams (they are parsed as HTML tags); use `[pubkey]` or `(node_id)`.
+   * Never use double pipes (`||`) inside `|...|` edge labels in flowcharts.
+   * Always run `python3 scripts/check_mermaid.py <changed_files>` before staging commits that touch Markdown files.
 
 ---
 

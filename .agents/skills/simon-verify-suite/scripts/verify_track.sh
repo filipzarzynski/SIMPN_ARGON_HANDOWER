@@ -92,7 +92,7 @@ is_allowed_file() {
             [[ "$f" == "docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md" || "$f" == "scripts/verify_all_fast.sh" ]]
             ;;
         J)
-            [[ "$f" == "crates/simon-node/src/lib.rs" || "$f" == "crates/simon-cli/src/coord.rs" ]]
+            [[ "$f" == "crates/simon-node/src/lib.rs" || "$f" == "crates/simon-cli/src/coord.rs" || "$f" == "crates/simon-node/tests/f3_receipt.rs" ]]
             ;;
         K)
             [[ "$f" == "crates/simon-cli/src/agent.rs" || "$f" == "crates/simon-cli/tests/vpn_attack_harness.rs" ]]
@@ -145,6 +145,13 @@ while IFS= read -r file; do
     if [[ "$file" != "docs/THREAT-MODEL.md" && "$file" != "scripts/verify_all_fast.sh" ]]; then
         if grep -niE "100% Authentic|100% Cryptographically Verified|guarantees the claimed model|SIMULATED P2P TOPOLOGY|ed25519:operator_sig_" "$file"; then
             echo "ERROR: Captain Guardrail Violation in '$file': banned overclaim or fake signature phrase detected!"
+            GUARDRAIL_FAIL=1
+        fi
+    fi
+    # 3. Mermaid chart syntax verification for modified markdown files
+    if [[ "$file" == *.md && -f "$HANDOVER_ROOT/scripts/check_mermaid.py" ]]; then
+        if ! python3 "$HANDOVER_ROOT/scripts/check_mermaid.py" "$file"; then
+            echo "ERROR: Mermaid diagram syntax error detected in '$file'!"
             GUARDRAIL_FAIL=1
         fi
     fi

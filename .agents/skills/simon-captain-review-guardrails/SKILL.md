@@ -94,3 +94,21 @@ Every Stage 2 (`Track G`–`Track J`) and Stage 3 (`Track K`–`Track N`) agent 
 - Every grid child and flex container displaying hex digests, keys, or JSON must include `min-w-0` and `break-all` / `whitespace-pre-wrap` so the page never overflows a `390px` phone screen.
 - Every `<button>` must have `type="button"`, interactive toggle buttons must have `aria-pressed={...}`, form controls must have associated `<label for="...">`, and dynamic verdict banners must use `aria-live="polite"`.
 - Always run `cargo clippy --workspace --all-targets -- -D warnings` (with `--all-targets` so test code is linted!).
+
+---
+
+## Rule 8: Zero Mermaid Syntax Errors in Documentation & Architecture Diagrams
+
+- **Why**: Mermaid diagrams render across GitHub, VS Code, and SvelteKit UI. Semicolons inside sequence diagram notes/messages, unescaped HTML-like angle brackets, unquoted labels with parentheses/brackets, or unescaped arrow tokens break Mermaid rendering with syntax errors.
+- **DO NOT**:
+  - Put semicolons `;` inside `sequenceDiagram` `Note over ...:` text or messages (in Mermaid, `;` is a statement delimiter and truncates the statement!).
+  - Put unescaped arrows `->`, `-->`, `--`, `->>` inside Note text.
+  - Put unescaped angle-bracket placeholders `<pubkey>` or `<node_id>` (they are parsed as HTML tags).
+  - Use unquoted flowchart labels with parentheses, brackets, or commas: `Node[Label (info)]`.
+  - Use double pipes `||` inside pipe-delimited flowchart edge labels: `-->|"foo || bar"|`.
+- **DO**:
+  - Use commas or dashes in sequence notes and messages: `Note over Node: Check replay, check rate, acquire semaphores`.
+  - Use square brackets or parentheses for identifiers: `[pubkey]`, `(node_id)`.
+  - Quote all flowchart node labels: `Node["Label (info)"]`.
+  - Run `python3 scripts/check_mermaid.py` on all modified markdown files before staging commits.
+

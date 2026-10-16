@@ -83,7 +83,7 @@ sequenceDiagram
     participant Node as simon --role node (node.rs)
     participant LLM as vLLM / llama-server (:8000 / :18020)
 
-    Client->>Agent: Spawn with --request-file - (stdin JSON) + --expect-signer <node_id> [LIVE NOW]
+    Client->>Agent: Spawn with --request-file - (stdin JSON) + --expect-signer [node_id] [LIVE NOW]
     Note over Client: [STAGE 3 - Wave 3A / Track L] Enforce MAX_BODY_BYTES = 1 MiB (HTTP 413) before reading request
     Note over Agent: Load 0600 identity (~/.simon/api-client.id), build JobOrder with fresh 128-bit nonce & sign Autoryzacja
     Agent->>Node: Dial --bootstrap Multiaddr over libp2p (TCP + Noise + Yamux) & send PromptRequest (CBOR /simon/prompt/1.0.0)
@@ -102,7 +102,7 @@ sequenceDiagram
 
     Node-->>Agent: PromptReply::Ok(PromptResponse { output, receipt, tokenizer_hash, prompt_token_ids, output_token_ids })
 
-    Note over Agent: [LIVE NOW] Client Verification: verify_self() + podpisal_oczekiwany(--expect-signer) + zgodny_z_wyjsciem(output) + zweryfikuj_m1(order.nonce) -> poziom_sprawdzony
+    Note over Agent: [LIVE NOW] Client Verification: verify_self() + podpisal_oczekiwany(--expect-signer) + zgodny_z_wyjsciem(output) + zweryfikuj_m1(order.nonce) yields poziom_sprawdzony
     Note over Agent: [STAGE 3 - Wave 3A / Track K] Reject if r.poziom() >= 1 but M1 token arrays are missing
 
     Agent-->>Client: Stdout JSON (ok, output, receipt, poziom_dowodu, signer_pinned)

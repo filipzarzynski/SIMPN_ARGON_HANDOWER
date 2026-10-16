@@ -77,7 +77,7 @@ sequenceDiagram
     LLM-->>Node: HTTP 200 JSON (choices[0].message, usage)
     Note over Node: zbuduj_podpisany_receipt: output_digest = SHA256(SIMON/OUTPUT/v1), real started/finished_at_us, whole-token Precision (or Unknown), wiazania = None (Level 0 - wired in Stage 2 Track H), Ed25519 sign
     Node-->>Agent: PromptReply::Ok(PromptResponse { output, receipt, ... })
-    Note over Agent: zweryfikuj_receipt: r.verify_self() + podpisal_oczekiwany(--expect-signer) + r.job_id & r.model_hash + r.zgodny_z_wyjsciem(output) + zweryfikuj_m1(order.nonce) -> poziom_sprawdzony
+    Note over Agent: zweryfikuj_receipt: r.verify_self() + podpisal_oczekiwany(--expect-signer) + r.job_id & r.model_hash + r.zgodny_z_wyjsciem(output) + zweryfikuj_m1(order.nonce) yields poziom_sprawdzony
     Agent-->>Py: Prints JSON line to stdout (receipt_zweryfikowany: true, poziom_dowodu, signer_pinned)
 ```
 
@@ -121,7 +121,7 @@ flowchart LR
     end
 
     subgraph Level1["Proof Level 1 — WiazaniaM1 (Verified in Core/WASM; Live Node Wiring in Stage 2 Track H)"]
-        TokBytes["tokenizer.json bytes"] -->|"SHA256(SIMON/TOKENIZER/v1 || 0x00 || bytes)"| TokHash["tokenizer_hash"]
+        TokBytes["tokenizer.json bytes"] -->|"SHA256(SIMON/TOKENIZER/v1 + 0x00 + bytes)"| TokHash["tokenizer_hash"]
         TokHash & Nonce["client_nonce (from order.nonce)"] & PIds["prompt_token_ids: &[u32]"] -->|"DOMENA: SIMON/PROMPT/v1"| PDig["prompt_digest"]
         PDig & OIds["output_token_ids: &[u32]"] -->|"DOMENA: SIMON/CHAIN/v1"| Chain["output_token_chain"]
         Samp["Sampling params (int scaled)"] -->|"DOMENA: SIMON/SAMPLING/v1"| SHash["sampling_params_hash"]

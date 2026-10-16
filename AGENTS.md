@@ -76,6 +76,7 @@ Every Track agent MUST execute these 5 phases in order:
 2. Activate the domain skill matching your track:
    - Tracks H, J, K, L: read [`.agents/skills/simon-crypto-and-protocol/SKILL.md`](./.agents/skills/simon-crypto-and-protocol/SKILL.md)
    - Tracks G, I, M, N: read [`.agents/skills/simon-industry-and-ui/SKILL.md`](./.agents/skills/simon-industry-and-ui/SKILL.md)
+   - Any track touching Markdown with Mermaid charts: read [`.agents/skills/simon-mermaid-validator/SKILL.md`](./.agents/skills/simon-mermaid-validator/SKILL.md) and run `python3 scripts/check_mermaid.py <files>`
 3. Inspect the exact lines of every target file inside `workspaces/track_<X>/` using `view_file` before writing any code.
 
 ### Phase 3: Implement in Self-Contained, Cherry-Pickable Commits
@@ -90,7 +91,7 @@ Every Track agent MUST execute these 5 phases in order:
    ```bash
    bash .agents/skills/simon-verify-suite/scripts/verify_track.sh <TRACK_LETTER> --final
    ```
-2. Confirm all 4 passes (File Scope, Captain Guardrail Path/Overclaim Scan, Commit History, and Rust/Python/UI Test Suites) pass with zero errors or warnings.
+2. Confirm all 4 passes (File Scope, Captain Guardrail Path/Overclaim & Mermaid Syntax Scan, Commit History, and Rust/Python/UI Test Suites) pass with zero errors or warnings.
 
 ### Phase 5: Merge Check, `fz-contrib` Integration & Pull Request (`simon-pr-delivery` skill)
 1. Read [`.agents/skills/simon-pr-delivery/SKILL.md`](./.agents/skills/simon-pr-delivery/SKILL.md) and run:
