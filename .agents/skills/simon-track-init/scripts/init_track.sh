@@ -9,9 +9,11 @@ fi
 TRACK_RAW="$(echo "$1" | tr '[:lower:]' '[:upper:]')"
 TRACK="${TRACK_RAW#TRACK_}"
 TRACK="${TRACK#TRACK}"
-UPSTREAM_URL="${2:-https://github.com/Szpili/SIMON.git}"
-FORK_URL="${3:-https://github.com/filipzarzynski/SIMON.git}"
+UPSTREAM_URL="${2:-git@github.com:Szpili/SIMON.git}"
+FORK_URL="${3:-git@github.com:filipzarzynski/SIMON.git}"
 BASE_BRANCH="fz-contrib"
+
+export PATH="/home/agent/.cargo/bin:/home/agent/.local/bin:/usr/local/bin:$PATH"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HANDOVER_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
@@ -86,7 +88,7 @@ case "$TRACK" in
         BRANCH="fz/track-J-signed-job-result-and-registration"
         TRACK_DIR_NAME="track_J_signed_job_result_and_registration"
         TRACK_TAG="FZ-J"
-        ALLOWED_FILES="crates/simon-node/src/lib.rs, crates/simon-cli/src/coord.rs"
+        ALLOWED_FILES="crates/simon-node/src/lib.rs, crates/simon-cli/src/coord.rs, crates/simon-node/tests/f3_receipt.rs"
         ;;
     K)
         STAGE="3 (Wave 3A)"
@@ -172,11 +174,17 @@ fi
 git -C "$CLONE_DIR" config user.name "FZ (Track $TRACK)"
 git -C "$CLONE_DIR" config user.email "fz-track-${TRACK,,}@simon-argon.local"
 
-# origin points to user's fork (filipzarzynski/SIMON) for pushes and PRs
+# origin and fork point to user's fork (filipzarzynski/SIMON) for pushes and PRs
 if git -C "$CLONE_DIR" remote get-url origin >/dev/null 2>&1; then
     git -C "$CLONE_DIR" remote set-url origin "$FORK_URL"
 else
     git -C "$CLONE_DIR" remote add origin "$FORK_URL"
+fi
+
+if git -C "$CLONE_DIR" remote get-url fork >/dev/null 2>&1; then
+    git -C "$CLONE_DIR" remote set-url fork "$FORK_URL"
+else
+    git -C "$CLONE_DIR" remote add fork "$FORK_URL"
 fi
 
 # upstream points to original canonical repository (Szpili/SIMON) for tracking main

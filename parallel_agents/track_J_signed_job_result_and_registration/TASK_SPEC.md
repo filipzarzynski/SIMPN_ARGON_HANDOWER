@@ -7,6 +7,7 @@
 **Exclusive Permitted Files:**
 * `crates/simon-node/src/lib.rs`
 * `crates/simon-cli/src/coord.rs`
+* `crates/simon-node/tests/f3_receipt.rs`
 
 ---
 

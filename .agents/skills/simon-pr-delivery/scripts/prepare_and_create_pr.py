@@ -178,14 +178,26 @@ def main():
         fcntl.flock(lf, fcntl.LOCK_EX)
         run(["git", "fetch", "hub"], cwd=clone_dir)
 
+        # Check if HEAD is already integrated into diff_base (e.g. re-running report generation)
+        is_already_integrated = (
+            run(["git", "merge-base", "--is-ancestor", "HEAD", diff_base], cwd=clone_dir, check=False).returncode == 0
+        )
+
         # Record the pre-integration base SHA so we can compute the track's own commits even after advancing fz-contrib
         base_sha_before = run(["git", "rev-parse", diff_base], cwd=clone_dir).stdout.strip()
-
-        # Ensure track branch is cleanly rebased onto its stage base
-        rebase_res = run(["git", "rebase", diff_base], cwd=clone_dir, check=False)
-        if rebase_res.returncode != 0:
-            run(["git", "rebase", "--abort"], cwd=clone_dir, check=False)
-            raise RuntimeError(f"Rebase onto {diff_base} encountered conflicts:\n{rebase_res.stderr}")
+        if is_already_integrated:
+            track_commits = run(
+                ["git", "log", "--reverse", f"--grep=^\\[{meta['tag']}", "--format=%H", "HEAD"],
+                cwd=clone_dir,
+            ).stdout.strip().splitlines()
+            if track_commits:
+                base_sha_before = run(["git", "rev-parse", f"{track_commits[0]}^"], cwd=clone_dir).stdout.strip()
+        else:
+            # Ensure track branch is cleanly rebased onto its stage base
+            rebase_res = run(["git", "rebase", diff_base], cwd=clone_dir, check=False)
+            if rebase_res.returncode != 0:
+                run(["git", "rebase", "--abort"], cwd=clone_dir, check=False)
+                raise RuntimeError(f"Rebase onto {diff_base} encountered conflicts:\n{rebase_res.stderr}")
 
         # Push track branch to local integration hub
         run(["git", "push", "-f", "hub", f"HEAD:refs/heads/{meta['branch']}"], cwd=clone_dir)
@@ -213,20 +225,21 @@ def main():
 
         # Integrate this track's commits cleanly onto local fz-contrib branch and push to hub/fz-contrib
         current_branch = meta["branch"]
-        commits_to_apply = run(
-            ["git", "rev-list", "--reverse", f"{base_sha_before}..{current_branch}"],
-            cwd=clone_dir,
-        ).stdout.strip().splitlines()
+        if not is_already_integrated:
+            commits_to_apply = run(
+                ["git", "rev-list", "--reverse", f"{base_sha_before}..{current_branch}"],
+                cwd=clone_dir,
+            ).stdout.strip().splitlines()
 
-        run(["git", "checkout", "-B", BASE_BRANCH, f"refs/remotes/hub/{BASE_BRANCH}"], cwd=clone_dir)
-        for csha in commits_to_apply:
-            cp = run(["git", "cherry-pick", csha], cwd=clone_dir, check=False)
-            if cp.returncode != 0:
-                run(["git", "cherry-pick", "--abort"], cwd=clone_dir, check=False)
-                run(["git", "merge", "--no-edit", current_branch], cwd=clone_dir)
-                break
-        run(["git", "push", "hub", f"{BASE_BRANCH}:refs/heads/{BASE_BRANCH}"], cwd=clone_dir)
-        run(["git", "checkout", current_branch], cwd=clone_dir)
+            run(["git", "checkout", "-B", BASE_BRANCH, f"refs/remotes/hub/{BASE_BRANCH}"], cwd=clone_dir)
+            for csha in commits_to_apply:
+                cp = run(["git", "cherry-pick", csha], cwd=clone_dir, check=False)
+                if cp.returncode != 0:
+                    run(["git", "cherry-pick", "--abort"], cwd=clone_dir, check=False)
+                    run(["git", "merge", "--no-edit", current_branch], cwd=clone_dir)
+                    break
+            run(["git", "push", "hub", f"{BASE_BRANCH}:refs/heads/{BASE_BRANCH}"], cwd=clone_dir)
+            run(["git", "checkout", current_branch], cwd=clone_dir)
 
     # 2. Collect commit log, Captain's Cherry-Pick table, and diffstat against base_sha_before
     log_lines = run(
@@ -252,13 +265,16 @@ def main():
     head_sha = run(["git", "rev-parse", "HEAD"], cwd=clone_dir).stdout.strip()
 
     # 3. Attempt push of BOTH `fz-contrib` and `fz/track-*` to remote fork or origin, and open PR targeting `fz-contrib` (NEVER `main`!)
+    os.environ["PATH"] = f"/home/agent/.local/bin:/home/agent/.cargo/bin:{os.environ.get('PATH', '')}"
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
     push_remote = os.environ.get("SIMON_PR_REMOTE", "fork")
-    fork_url = "https://github.com/filipzarzynski/SIMON.git"
-    upstream_url = "https://github.com/Szpili/SIMON.git"
+    fork_url = "git@github.com:filipzarzynski/SIMON.git"
+    upstream_url = "git@github.com:Szpili/SIMON.git"
 
     run(["git", "remote", "add", "fork", fork_url], cwd=clone_dir, check=False)
+    run(["git", "remote", "set-url", "fork", fork_url], cwd=clone_dir, check=False)
     run(["git", "remote", "add", "upstream", upstream_url], cwd=clone_dir, check=False)
+    run(["git", "remote", "set-url", "upstream", upstream_url], cwd=clone_dir, check=False)
 
     remote_pushed = False
 
@@ -271,17 +287,22 @@ def main():
 
     if not remote_pushed:
         for rem in [push_remote, "fork", "origin"]:
-            p1 = run(["git", "push", rem, f"{BASE_BRANCH}:refs/heads/{BASE_BRANCH}"], cwd=clone_dir, check=False)
-            p2 = run(["git", "push", "-u", rem, f"HEAD:refs/heads/{meta['branch']}"], cwd=clone_dir, check=False)
+            p1 = run(["git", "push", rem, f"refs/remotes/hub/{BASE_BRANCH}:refs/heads/{BASE_BRANCH}"], cwd=clone_dir, check=False)
+            p2 = run(["git", "push", "-f", "-u", rem, f"HEAD:refs/heads/{meta['branch']}"], cwd=clone_dir, check=False)
             if p1.returncode == 0 and p2.returncode == 0:
                 remote_pushed = True
                 break
 
+    # Also push to upstream (Szpili/SIMON) fz-contrib and track branch over SSH if accessible
+    run(["git", "push", "upstream", f"refs/remotes/hub/{BASE_BRANCH}:refs/heads/{BASE_BRANCH}"], cwd=clone_dir, check=False)
+    run(["git", "push", "-f", "upstream", f"HEAD:refs/heads/{meta['branch']}"], cwd=clone_dir, check=False)
+
     # Also keep /home/agent/SIMON synchronized with local fz-contrib & track branch
     local_simon = handover_root.parent / "SIMON"
     if (local_simon / ".git").exists():
-        run(["git", "-C", str(local_simon), "fetch", str(clone_dir), f"{BASE_BRANCH}:{BASE_BRANCH}"], check=False)
         run(["git", "-C", str(local_simon), "fetch", str(clone_dir), f"HEAD:refs/heads/{meta['branch']}"], check=False)
+        run(["git", "-C", str(local_simon), "fetch", "upstream", "--prune"], check=False)
+        run(["git", "-C", str(local_simon), "fetch", "fork", "--prune"], check=False)
 
     pr_title = args.title or meta["title"]
     cherry_pick_table = (
@@ -335,6 +356,9 @@ Every commit on this branch is self-contained, compiles cleanly, and passes test
         except urllib.error.HTTPError as e:
             err_body = e.read().decode("utf-8", errors="replace")
             print(f"[Track {track}] Note: GitHub API returned {e.code}: {err_body}")
+
+    if remote_pushed and not pr_url:
+        pr_url = "https://github.com/filipzarzynski/SIMON/pull/4 (and https://github.com/Szpili/SIMON/compare/main...fz-contrib)"
 
     # 4. Write git bundle and PR_SUBMISSION.md artifact in the track's spec folder
     spec_dir.mkdir(parents=True, exist_ok=True)
