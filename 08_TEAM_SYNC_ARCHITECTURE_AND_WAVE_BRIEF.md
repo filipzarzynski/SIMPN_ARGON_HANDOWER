@@ -1,14 +1,12 @@
 # 08 — Team Sync Executive Brief: Current Architecture vs. Stage 2 & Stage 3 Waves
 
-**Baseline Commit (`fz-contrib`):** `82baa8e` (merges Stage 1 `4186b4d` + Stage 2 Tracks G–J `5de1c6c`..`82baa8e` — submitted in [Szpili/SIMON#9](https://github.com/Szpili/SIMON/pull/9))  
+**Baseline Commit (`upstream/main` & `fz-contrib`):** `8fbe206` (Submission State: Stage 1 & Stage 2 merged + overnight polish)  
 **Companion Architecture Doc:** [`01_ARCHITECTURE_AND_DATA_FLOWS.md`](./01_ARCHITECTURE_AND_DATA_FLOWS.md)  
-**Stage 1 Post-Mortem:** [`07_STAGE1_CAPTAIN_REVIEW_POSTMORTEM.md`](./07_STAGE1_CAPTAIN_REVIEW_POSTMORTEM.md)  
-**Stage 2 Upstream PR:** [Szpili/SIMON#9](https://github.com/Szpili/SIMON/pull/9) (`fz-contrib` $\rightarrow$ `main`, 12 commits, mergeable)  
-**Stage 2 Cherry-Pick Guide:** [`docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md`](https://github.com/Szpili/SIMON/blob/fz-contrib/docs/FZ-CONTRIB-CHERRY-PICK-GUIDE.md)  
-**Purpose:** Single-document executive and technical briefing for the hackathon team call. Grounded 100% in the actual source code, this document separates:
-* `[LIVE IN fz-contrib (82baa8e)]` — What is currently implemented, tested, and running in `fz-contrib` right now (Stage 1 + Stage 2 completed).
-* `[STAGE 3 — Wave 3A (Tracks K, L)]` — `STRESS-TESTS.md` `Next #4` prepared VPN target network attack harness (`vpn_attack_harness.rs`), client M1 missing-token gate, and `simon_api.py` / `simon_monitor.py` hardening.
-* `[STAGE 3 — Wave 3B (Tracks M, N)]` — Industry NFKC/link/role guardrail parity across `tickets.py` & `agent_triage.py` (`stress_corpus.json` expanded 17 $\rightarrow$ 25 cases) and UI `/receipts` + `/demo` polish.
+**Judging & Strategy Brief:** [`09_JUDGING_DEFENSE_AND_STRATEGY_BRIEF.md`](./09_JUDGING_DEFENSE_AND_STRATEGY_BRIEF.md)  
+**Lablab Submission:** [SIMON on Lablab.ai](https://lablab.ai/ai-hackathons/amd-developer-hackathon-act-iii/simon/simon-signed-verifiable-ai-tickets-on-amd-mi300x)  
+**Purpose:** Single-document executive and technical briefing for the hackathon team and judging defense. Grounded 100% in the actual source code, this document separates:
+* `[SUBMITTED & LIVE IN main (8fbe206)]` — What is currently implemented, tested, and running in production right now (Stage 1 + Stage 2 merged in PR #9, 15/15 WASM receipts verified, live on `/industry`).
+* `[POST-HACKATHON QUEUE]` — Post-submission roadmap staged for execution after judging (VPN target network attack harness `vpn_attack_harness.rs`, PL $\rightarrow$ EN language cleanup).
 
 ---
 

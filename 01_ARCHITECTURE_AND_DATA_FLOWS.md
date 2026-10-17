@@ -1,6 +1,6 @@
 # 01 — Architecture Overview & Data Flows
 
-This document maps the **actual implemented architecture** of SIMON (`https://github.com/Szpili/SIMON`, baseline `82baa8e` after Stage 1 and Stage 2 merges — [Szpili/SIMON#9](https://github.com/Szpili/SIMON/pull/9)) as verified directly from the source code, separating what runs live in production from what exists as offline verifiers, Gossipsub coordination, or Stage 3 queued work (for the Stage 2/3 wave-annotated team brief, see [`08_TEAM_SYNC_ARCHITECTURE_AND_WAVE_BRIEF.md`](./08_TEAM_SYNC_ARCHITECTURE_AND_WAVE_BRIEF.md)).
+This document maps the **actual implemented architecture** of SIMON (`https://github.com/Szpili/SIMON`, baseline `8fbe206` — submission state after Stage 1, Stage 2 PR #9, and overnight polish) as verified directly from the source code, separating what runs live in production from what exists as offline verifiers, Gossipsub coordination, or post-hackathon queued work (for the team brief, see [`08_TEAM_SYNC_ARCHITECTURE_AND_WAVE_BRIEF.md`](./08_TEAM_SYNC_ARCHITECTURE_AND_WAVE_BRIEF.md) and [`09_JUDGING_DEFENSE_AND_STRATEGY_BRIEF.md`](./09_JUDGING_DEFENSE_AND_STRATEGY_BRIEF.md)).
 
 ---
 

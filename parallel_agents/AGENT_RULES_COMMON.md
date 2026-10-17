@@ -8,7 +8,7 @@ Every agent working on a SIMON feature branch MUST follow these rules without ex
 
 1. **Do NOT pollute `/home/agent/SIMON` or target `main` directly:**
    * Always work inside your dedicated clone directory `/home/agent/SIMPN_ARGON_HANDOWER/workspaces/track_<X>` initialized via `bash .agents/skills/simon-track-init/scripts/init_track.sh <X>`.
-   * Always branch off `fz-contrib` (`82baa8e`) into `fz/track-<X>-<slug>` and target **`fz-contrib`** (NEVER `main`) when creating a PR.
+   * Always branch off `fz-contrib` (`8fbe206`) into `fz/track-<X>-<slug>` and target **`fz-contrib`** (NEVER `main`) when creating a PR.
    * Prefix every commit with `[FZ-<X><N>]` (e.g., `[FZ-H1] feat(cli): wire live M1 token chain with MAX_M1_TOKENS cap`). Every commit must compile and pass tests independently so the Team Captain can cherry-pick individual commits onto `main`.
 2. **Mandatory Captain Review Guardrails ([`simon-captain-review-guardrails`](../.agents/skills/simon-captain-review-guardrails/SKILL.md)):**
    * **Never guess a signed claim:** Unknown quantization/precision $\rightarrow$ `Precision::Unknown` (never default to `Fp16` or map integer quant to `Fp4`/`Fp8`). Unknown proof level $\rightarrow$ `poziom_sprawdzony` (never node-declared `receipt.poziom()`). Nonce verification $\rightarrow$ always use the client's own `order.nonce` (never fall back to `receipt.wiazania.client_nonce`).
